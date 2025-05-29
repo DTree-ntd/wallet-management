@@ -1,4 +1,4 @@
-# Walle Mmanagement
+# Wallet Mmanagement
 
 ## Giới thiệu dự án
 
@@ -7,6 +7,7 @@ Hệ thống quản lý ví điểm thưởng là một ứng dụng cho phép n
 ### Chức năng chính
 
 1. **Quản lý tài khoản**
+
    - Đăng ký tài khoản mới
    - Đăng nhập hệ thống
    - Thay đổi mật khẩu
@@ -21,6 +22,7 @@ Hệ thống quản lý ví điểm thưởng là một ứng dụng cho phép n
 ### Phân quyền người dùng
 
 1. **Người dùng thông thường**
+
    - Xem và điều chỉnh thông tin cá nhân
    - Quản lý ví điểm thưởng của mình
    - Thực hiện giao dịch chuyển điểm
@@ -67,18 +69,20 @@ sudo apt install build-essential cmake
 
 ```bash
 # Sử dụng Homebrew
-brew install cmake 
+brew install cmake
 ```
 
 ### Biên dịch và chạy
 
 1. Clone repository:
+
 ```bash
 git clone <repository-url>
 cd wallet-management
 ```
 
 2. Tạo thư mục build và biên dịch:
+
 ```bash
 # Tạo thư mục build
 mkdir build
@@ -92,6 +96,7 @@ cmake --build .
 ```
 
 3. Chạy chương trình:
+
 ```bash
 # Windows
 .\wallet_management.exe
@@ -125,4 +130,3 @@ wallet-management/
 1. Nguyễn Trung Đức - K24DTCN588
 2. Mai Văn Đại
 3. Nguyễn Thu Trang
-
