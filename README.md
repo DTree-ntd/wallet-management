@@ -128,5 +128,5 @@ wallet-management/
 ## Thành viên tham gia dự án
 
 1. Nguyễn Trung Đức - K24DTCN588
-2. Mai Văn Đại
+2. Mai Văn Đại - K24DTCN583
 3. Nguyễn Thu Trang
