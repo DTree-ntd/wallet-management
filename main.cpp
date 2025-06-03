@@ -1,6 +1,6 @@
 #include <iostream>
 #include "UserManager.h"
-#include "WalletManager.h"
+#include ".h"
 #include <string>
 #include <limits>
 
@@ -8,7 +8,7 @@ using namespace std;
 
 int main() {
     UserManager userManager;
-    WalletManager walletManager;
+    Wallet Wallet;
 
     string currentUsername = "";
     int choice;
@@ -29,7 +29,7 @@ int main() {
                 string username;
                 if (userManager.loginUser(username)) {
                     currentUsername = username;
-                    walletManager.createWalletIfNotExist(currentUsername);
+                    Wallet.createWalletIfNotExist(currentUsername);
                     cout << "Dang nhap thanh cong!\n";
                 }
             } else if (choice == 3) {
@@ -48,7 +48,7 @@ int main() {
             cin >> choice;
 
             if (choice == 1) {
-                walletManager.viewBalance(currentUsername);
+                Wallet.viewBalance(currentUsername);
             } else if (choice == 2) {
                 string receiverUsername;
                 double amount;
@@ -58,7 +58,7 @@ int main() {
                 cout << "Nhap so diem muon chuyen: ";
                 cin >> amount;
 
-                walletManager.transferPoints(currentUsername, receiverUsername, amount);
+                Wallet.transferPoints(currentUsername, receiverUsername, amount);
             } else if (choice == 3) {
                 cout << "Dang xuat thanh cong.\n";
                 currentUsername = ""; // Đăng xuất
