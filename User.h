@@ -7,6 +7,7 @@
 
 class User {
 private:
+    std::vector<Wallet> wallets;
     std::string username;
     std::string password;
     std::string fullName;
@@ -17,6 +18,13 @@ private:
     std::vector<std::string> walletIds;
 
 public:
+    // Thêm ví mới cho user, với walletId tự tạo hoặc truyền vào
+    void addWallet(const Wallet& wallet);
+    // Lấy danh sách ví
+    std::vector<Wallet>& getWallets();
+    // Tìm ví theo walletId, trả về con trỏ nullptr nếu không tìm thấy
+    Wallet* findWalletById(const std::string& walletId);
+
     // Constructors
     User();
     User(const std::string& username, const std::string& password, 
