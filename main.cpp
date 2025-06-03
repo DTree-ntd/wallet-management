@@ -1,6 +1,8 @@
 #include <iostream>
 #include "UserManager.h"
 #include "WalletManager.h"
+#include <string>
+#include <limits>
 
 using namespace std;
 
