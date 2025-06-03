@@ -26,3 +26,20 @@ void User::setFullName(const std::string& newFullName) { fullName = newFullName;
 void User::setEmail(const std::string& newEmail) { email = newEmail; }
 void User::setPhoneNumber(const std::string& newPhoneNumber) { phoneNumber = newPhoneNumber; }
 void User::addWalletId(const std::string& walletId) { walletIds.push_back(walletId); } 
+
+void User::addWallet(const Wallet& wallet) {
+    wallets.push_back(wallet);
+}
+
+std::vector<Wallet>& User::getWallets() {
+    return wallets;
+}
+
+Wallet* User::findWalletById(const std::string& walletId) {
+    for (auto& w : wallets) {
+        if (w.getWalletId() == walletId) {
+            return &w;
+        }
+    }
+    return nullptr;
+}
