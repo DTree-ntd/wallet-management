@@ -1,6 +1,7 @@
 #ifndef USER_H
 #define USER_H
-
+#include "Wallet.h"
+#include <vector>
 #include <string>
 #include <vector>
 
