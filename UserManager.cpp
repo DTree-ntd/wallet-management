@@ -74,8 +74,32 @@ bool UserManager::login(const std::string& username, const std::string& password
         std::getline(ss, storedUsername, '|');
         std::getline(ss, storedPassword, '|');
 
-        if (storedUsername == username && storedPassword == password) {
-            return true;
+       if (storedUsername == username && storedPassword == password) {
+    bool isAdmin = false;
+    bool isAuto = false;
+    std::string fullName, email, phoneNumber, isAdminStr, isAutoStr, walletIdsStr;
+
+    std::getline(ss, fullName, '|');
+    std::getline(ss, email, '|');
+    std::getline(ss, phoneNumber, '|');
+    std::getline(ss, isAdminStr, '|');
+    std::getline(ss, isAutoStr, '|');
+    std::getline(ss, walletIdsStr);
+
+    isAdmin = (isAdminStr == "1" || isAdminStr == "true");
+    isAuto = (isAutoStr == "1" || isAutoStr == "true");
+
+    User user(storedUsername, storedPassword, fullName, email, phoneNumber, isAdmin, isAuto);
+    std::stringstream walletStream(walletIdsStr);
+    std::string walletId;
+    while (std::getline(walletStream, walletId, ',')) {
+        if (!walletId.empty())
+            user.addWalletId(walletId);
+    }
+
+    setCurrentUser(user);
+    return true;
+}
         }
     }
     return false;
