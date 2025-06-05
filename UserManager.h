@@ -1,3 +1,6 @@
+#ifndef USER_MANAGER_H
+#define USER_MANAGER_H
+
 #pragma once
 #include <string>
 #include <vector>
@@ -6,7 +9,7 @@
 #include <sstream>
 #include <iomanip>
 #include "User.h"
-#include "OTPManager.h"
+
 
 class UserManager {
 private:
