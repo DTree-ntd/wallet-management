@@ -3,12 +3,7 @@
 #include <unordered_map>
 #include <ctime>
 
-class OTPManager {
-private:
-    struct OTPInfo {
-        std::string otp;
-        std::time_t generatedTime;
-    };
+
 
     std::unordered_map<std::string, OTPInfo> otpStore;
     const int expirySeconds = 300; // OTP có hiệu lực 5 phút
