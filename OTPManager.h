@@ -1,3 +1,6 @@
+#ifndef OTP_MANAGER_H
+#define OTP_MANAGER_H
+
 #pragma once
 #include <string>
 #include <map>
