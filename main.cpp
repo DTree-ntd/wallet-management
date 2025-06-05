@@ -51,49 +51,49 @@ void registerUser(UserManager& userManager) {
     }
 }
 
-void login(UserManager& userManager, OTPManager& otpManager) {
+void login(UserManager& userManager) {
     clearScreen();
     std::string username, password;
-    
+
     std::cout << "\n=== DANG NHAP ===\n";
     std::cout << "Nhap ten dang nhap: ";
     std::cin >> username;
     std::cout << "Nhap mat khau: ";
     std::cin >> password;
-    
-    if (userManager.login(username, password)) {
-        std::string otp = otpManager.generateOTP(username);
-        std::cout << "Ma OTP cua ban la: " << otp << "\n"; // Thay vì gửi email, in ra console
-        std::cout << "Nhap ma OTP: ";
-        std::string inputOtp;
-        std::cin >> inputOtp;
 
-        if (otpManager.verifyOTP(username, inputOtp)) {
-            std::cout << "Dang nhap thanh cong (da xac thuc OTP)!\n";
-            // TODO: Menu nguoi dung dang nhap thanh cong
+    if (userManager.login(username, password)) {
+        // Bước 1: Sinh OTP và hiển thị (demo)
+        std::string otp = userManager.getOTPManager().generateOTP(username);
+
+        std::string inputOTP;
+        std::cout << "Nhap ma OTP da nhan: ";
+        std::cin >> inputOTP;
+
+        // Bước 2: Xác thực OTP
+        if (userManager.getOTPManager().verifyOTP(username, inputOTP)) {
+            userManager.setCurrentUser(userManager.getCurrentUser()); // Cập nhật trạng thái đăng nhập
+            std::cout << "Dang nhap thanh cong!\n";
         } else {
-            std::cout << "OTP khong hop le hoac het han.\n";
+            std::cout << "Xac thuc OTP that bai. Dang nhap bi huy.\n";
         }
     } else {
-        std::cout << "Dang nhap that bai! Vui long kiem tra lai thong tin.\n";
+        std::cout << "Dang nhap that bai! Vui long kiem tra lai.\n";
     }
 }
-
 int main() {
     UserManager userManager("../data/users.txt");
-    OTPManager otpManager;
     int choice;
-
+    
     while (true) {
         showMenu();
         std::cin >> choice;
-
+        
         switch (choice) {
             case 1:
                 registerUser(userManager);
                 break;
             case 2:
-                login(userManager, otpManager);
+                login(userManager);
                 break;
             case 3:
                 clearScreen();
@@ -102,10 +102,11 @@ int main() {
             default:
                 std::cout << "Lua chon khong hop le! Vui long chon lai.\n";
         }
-
+        
         std::cout << "\nNhan Enter de tiep tuc...";
         std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         std::cin.get();
     }
+    
     return 0;
-}
+} 
