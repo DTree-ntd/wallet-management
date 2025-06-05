@@ -8,4 +8,5 @@ add_executable(wallet_management
     main.cpp
     User.cpp
     UserManager.cpp
+    OTPManager.cpp 
 )
