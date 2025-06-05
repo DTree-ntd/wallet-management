@@ -1,17 +1,30 @@
 #include "OTPManager.h"
-#include <cstdlib>
-#include <ctime>
-#include <sstream>
-#include <iomanip>
 
-std::string OTPManager::generateOTP() {
-    std::srand(std::time(nullptr));
-    int otp = 100000 + std::rand() % 900000; // 6 digits
-    std::ostringstream oss;
-    oss << std::setw(6) << std::setfill('0') << otp;
-    return oss.str();
+std::string OTPManager::generateOTP(const std::string& username) {
+    std::string otp;
+    for (int i = 0; i < 6; ++i) {
+        otp += std::to_string(std::rand() % 10);
+    }
+
+    time_t now = std::time(nullptr);
+    otpStore[username] = {otp, now};
+    return otp;
 }
 
-bool OTPManager::verifyOTP(const std::string& inputOTP, const std::string& actualOTP) {
-    return inputOTP == actualOTP;
+bool OTPManager::verifyOTP(const std::string& username, const std::string& otpCode) {
+    if (otpStore.find(username) == otpStore.end()) return false;
+
+    auto& [storedOTP, timestamp] = otpStore[username];
+    time_t now = std::time(nullptr);
+    if (now - timestamp > expirySeconds) {
+        otpStore.erase(username);
+        return false;
+    }
+
+    if (storedOTP == otpCode) {
+        otpStore.erase(username);
+        return true;
+    }
+
+    return false;
 }
