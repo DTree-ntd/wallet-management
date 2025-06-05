@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <limits>
+#include "OTPManager.h"
 
 void clearScreen() {
     #ifdef _WIN32
