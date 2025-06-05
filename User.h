@@ -41,4 +41,12 @@ public:
     void addWalletId(const std::string& walletId);
 };
 
+
+std::vector<std::string> getWalletIds() const { return walletIds; }
+
+
+void setWalletIds(const std::vector<std::string>& ids) {
+    walletIds = ids;
+}
+
 #endif 
