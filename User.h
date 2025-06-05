@@ -1,9 +1,17 @@
+#ifndef OTP_MANAGER_H
+#define OTP_MANAGER_H
+
+#include "OTPManager.h"
+#include <chrono>
 #pragma once
 #include <string>
 #include <unordered_map>
 #include <ctime>
 
-
+struct OTPInfo {
+    std::string otpCode;
+    std::chrono::system_clock::time_point expiry;
+};
 
     std::unordered_map<std::string, OTPInfo> otpStore;
     const int expirySeconds = 300; // OTP có hiệu lực 5 phút
