@@ -1,5 +1,5 @@
-#ifndef OTP_MANAGER_H
-#define OTP_MANAGER_H
+#ifndef USER_H
+#define USER_H
 
 #include "OTPManager.h"
 #include <chrono>
@@ -20,3 +20,5 @@ public:
     std::string generateOTP(const std::string& username);
     bool verifyOTP(const std::string& username, const std::string& otpCode);
 };
+
+#endif
