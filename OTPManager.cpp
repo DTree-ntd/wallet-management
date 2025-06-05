@@ -1,22 +1,34 @@
 #include "OTPManager.h"
+#include <random>
+#include <sstream>
+#include <iomanip>
 
 std::string OTPManager::generateOTP(const std::string& username) {
-    std::string otp;
-    for (int i = 0; i < 6; ++i) {
-        otp += std::to_string(std::rand() % 10);
-    }
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> dist(0, 999999);
 
-    time_t now = std::time(nullptr);
-    otpStore[username] = {otp, now};
-    return otp;
+    int otpValue = dist(gen);
+    std::ostringstream oss;
+    oss << std::setw(6) << std::setfill('0') << otpValue;
+
+    std::string otpCode = oss.str();
+    otpStore[username] = {otpCode, std::chrono::steady_clock::now()};
+
+    // Thay vì gửi email, in ra console để demo
+    std::cout << "[OTP] Ma OTP cua ban la: " << otpCode << std::endl;
+    return otpCode;
 }
 
 bool OTPManager::verifyOTP(const std::string& username, const std::string& otpCode) {
     if (otpStore.find(username) == otpStore.end()) return false;
 
-    auto& [storedOTP, timestamp] = otpStore[username];
-    time_t now = std::time(nullptr);
-    if (now - timestamp > expirySeconds) {
+    auto stored = otpStore[username];
+    auto storedOTP = stored.first;
+    auto timestamp = stored.second;
+
+    auto now = std::chrono::steady_clock::now();
+    if (std::chrono::duration_cast<std::chrono::seconds>(now - timestamp).count() > expirySeconds) {
         otpStore.erase(username);
         return false;
     }
