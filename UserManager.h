@@ -47,3 +47,4 @@ void logout() {
 }
 
 OTPManager& getOTPManager() { return otpManager; }
+#endif
