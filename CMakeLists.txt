@@ -33,6 +33,7 @@ add_executable(wallet_management
     User.cpp
     UserManager.cpp
     OTPManager.cpp
+    PasswordHasher.cpp
 )
 
 target_include_directories(wallet_management PRIVATE ${OPENSSL_INCLUDE_DIR})

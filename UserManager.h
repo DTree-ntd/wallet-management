@@ -8,6 +8,7 @@
 #include <regex>
 #include "User.h"
 #include "OTPManager.h"
+#include "PasswordHasher.h"
 
 enum class RegisterResult {
     SUCCESS,
