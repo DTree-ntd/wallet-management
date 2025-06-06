@@ -50,6 +50,7 @@ Hệ thống quản lý ví điểm thưởng là một ứng dụng cho phép n
 - CMake phiên bản 3.10 trở lên
 - Make hoặc Ninja (tùy chọn)
 - OpenSSL phiên bản 3.0 trở lên
+- libqrencode (thư viện tạo mã QR)
 
 ### Cài đặt môi trường
 
@@ -64,9 +65,9 @@ Hệ thống quản lý ví điểm thưởng là một ứng dụng cho phép n
      ```bash
      pacman -Syu
      ```
-   - Cài đặt OpenSSL và các công cụ phát triển:
+   - Cài đặt OpenSSL, qrencode và các công cụ phát triển:
      ```bash
-     pacman -S mingw-w64-x86_64-openssl mingw-w64-x86_64-cmake mingw-w64-x86_64-gcc
+     pacman -S mingw-w64-x86_64-openssl mingw-w64-x86_64-qrencode mingw-w64-x86_64-cmake mingw-w64-x86_64-gcc
      ```
    - Thêm đường dẫn MSYS2 vào biến môi trường PATH (thường là `C:\msys64\mingw64\bin`)
 
@@ -74,7 +75,7 @@ Hệ thống quản lý ví điểm thưởng là một ứng dụng cho phép n
 
 ```bash
 # Sử dụng Homebrew
-brew install cmake openssl
+brew install cmake openssl qrencode
 ```
 
 ### Biên dịch và chạy

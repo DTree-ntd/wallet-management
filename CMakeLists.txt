@@ -11,8 +11,13 @@ if(WIN32)
     # - If using custom OpenSSL: Set to your OpenSSL installation path
     set(OPENSSL_ROOT_DIR "C:/msys64/mingw64")
     set(OPENSSL_INCLUDE_DIR "${OPENSSL_ROOT_DIR}/include")
-    set(OPENSSL_SSL_LIBRARY "${OPENSSL_ROOT_DIR}/lib/libssl.dll.a")
-    set(OPENSSL_CRYPTO_LIBRARY "${OPENSSL_ROOT_DIR}/lib/libcrypto.dll.a")
+    set(OPENSSL_SSL_LIBRARY "${OPENSSL_ROOT_DIR}/lib/libssl.a")
+    set(OPENSSL_CRYPTO_LIBRARY "${OPENSSL_ROOT_DIR}/lib/libcrypto.a")
+    
+    # Windows qrencode paths
+    set(QRENCODE_ROOT_DIR "C:/msys64/mingw64")
+    set(QRENCODE_INCLUDE_DIR "${QRENCODE_ROOT_DIR}/include")
+    set(QRENCODE_LIBRARY "${QRENCODE_ROOT_DIR}/lib/libqrencode.dll.a")
 elseif(APPLE)
     # macOS paths (using Homebrew)
     # - For custom installation: Set to your OpenSSL installation path
@@ -20,24 +25,19 @@ elseif(APPLE)
     set(OPENSSL_INCLUDE_DIR "${OPENSSL_ROOT_DIR}/include")
     set(OPENSSL_SSL_LIBRARY "${OPENSSL_ROOT_DIR}/lib/libssl.dylib")
     set(OPENSSL_CRYPTO_LIBRARY "${OPENSSL_ROOT_DIR}/lib/libcrypto.dylib")
+    
+    # macOS qrencode paths
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(QRENCODE REQUIRED libqrencode)
 endif()
 
 # Find OpenSSL
 find_package(OpenSSL REQUIRED)
 
-# Find required packages
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(QRENCODE REQUIRED libqrencode)
-
-# Find qrencode library
-find_library(QRENCODE_LIBRARY NAMES qrencode)
-find_path(QRENCODE_INCLUDE_DIR qrencode.h)
-
-if(NOT QRENCODE_LIBRARY OR NOT QRENCODE_INCLUDE_DIR)
-    if(WIN32)
+# Verify qrencode library
+if(WIN32)
+    if(NOT EXISTS "${QRENCODE_LIBRARY}" OR NOT EXISTS "${QRENCODE_INCLUDE_DIR}/qrencode.h")
         message(FATAL_ERROR "qrencode library not found. Please install it using MSYS2: 'pacman -S mingw-w64-x86_64-qrencode'")
-    else()
-        message(FATAL_ERROR "qrencode library not found. Please install it using 'brew install qrencode'")
     endif()
 endif()
 
@@ -68,9 +68,7 @@ target_link_libraries(wallet_management
 if(WIN32)
     add_custom_command(TARGET wallet_management POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${OPENSSL_ROOT_DIR}/bin/libssl-3.dll"
-            "${OPENSSL_ROOT_DIR}/bin/libcrypto-3.dll"
-            "${QRENCODE_LIBRARY}"
+            "${QRENCODE_ROOT_DIR}/bin/libqrencode.dll"
             $<TARGET_FILE_DIR:wallet_management>
     )
 endif()
