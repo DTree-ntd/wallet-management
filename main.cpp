@@ -16,8 +16,9 @@ void showMenu() {
     std::cout << "\n=== HE THONG QUAN LY VI DIEM THUONG ===\n";
     std::cout << "1. Dang ky tai khoan\n";
     std::cout << "2. Dang nhap\n";
-    std::cout << "3. Thoat\n";
-    std::cout << "Chon chuc nang (1-3): ";
+    std::cout << "3. Doi mat khau\n";
+    std::cout << "4. Thoat\n";
+    std::cout << "Chon chuc nang (1-4): ";
 }
 
 void registerUser(UserManager& userManager) {
@@ -113,6 +114,28 @@ void login(UserManager& userManager) {
     }
 }
 
+void changePassword(UserManager& userManager) {
+    clearScreen();
+    std::string username, oldPassword, newPassword;
+    
+    std::cout << "\n=== DOI MAT KHAU ===\n";
+    
+    std::cout << "Nhap ten dang nhap: ";
+    std::cin >> username;
+    
+    std::cout << "Nhap mat khau cu: ";
+    std::cin >> oldPassword;
+    
+    std::cout << "Nhap mat khau moi: ";
+    std::cin >> newPassword;
+    
+    if (userManager.changePassword(username, oldPassword, newPassword)) {
+        std::cout << "Doi mat khau thanh cong!\n";
+    } else {
+        std::cout << "Doi mat khau that bai! Vui long kiem tra lai thong tin.\n";
+    }
+}
+
 int main() {
     UserManager userManager("../data/users.txt");
     int choice;
@@ -129,6 +152,9 @@ int main() {
                 login(userManager);
                 break;
             case 3:
+                changePassword(userManager);
+                break;
+            case 4:
                 clearScreen();
                 std::cout << "Cam on ban da su dung chuong trinh!\n";
                 return 0;
