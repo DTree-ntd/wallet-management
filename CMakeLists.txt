@@ -7,13 +7,16 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Set OpenSSL paths based on OS
 if(WIN32)
     # Windows paths
+    # - If using MSYS2: Default path is "C:/msys64/mingw64"
+    # - If using custom OpenSSL: Set to your OpenSSL installation path
     set(OPENSSL_ROOT_DIR "C:/msys64/mingw64")
     set(OPENSSL_INCLUDE_DIR "${OPENSSL_ROOT_DIR}/include")
     set(OPENSSL_SSL_LIBRARY "${OPENSSL_ROOT_DIR}/lib/libssl.a")
     set(OPENSSL_CRYPTO_LIBRARY "${OPENSSL_ROOT_DIR}/lib/libcrypto.a")
 elseif(APPLE)
     # macOS paths (using Homebrew)
-    set(OPENSSL_ROOT_DIR "/usr/local/opt/openssl")
+    # - For custom installation: Set to your OpenSSL installation path
+    set(OPENSSL_ROOT_DIR "/opt/homebrew/opt/openssl@3")
     set(OPENSSL_INCLUDE_DIR "${OPENSSL_ROOT_DIR}/include")
     set(OPENSSL_SSL_LIBRARY "${OPENSSL_ROOT_DIR}/lib/libssl.dylib")
     set(OPENSSL_CRYPTO_LIBRARY "${OPENSSL_ROOT_DIR}/lib/libcrypto.dylib")

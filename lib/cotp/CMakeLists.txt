@@ -12,5 +12,8 @@ set(COTP_SOURCES
 
 add_library(cotp STATIC ${COTP_SOURCES})
 
-target_include_directories(cotp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(cotp PUBLIC 
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${OPENSSL_INCLUDE_DIR}
+)
 target_link_libraries(cotp ${OPENSSL_CRYPTO_LIBRARY} ${OPENSSL_SSL_LIBRARY}) 
