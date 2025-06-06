@@ -111,18 +111,121 @@ cmake --build .
 ./wallet_management
 ```
 
+### Xử lý lỗi
+
+Nếu sau khi cài đặt môi trường mà vẫn không build được, hãy kiểm tra và điều chỉnh các đường dẫn trong file `CMakeLists.txt`:
+
+#### Windows
+
+1. Kiểm tra đường dẫn MSYS2:
+   - Mở file `CMakeLists.txt`
+   - Tìm và kiểm tra các biến đường dẫn:
+     ```cmake
+     set(OPENSSL_ROOT_DIR "C:/msys64/mingw64")
+     set(QRENCODE_ROOT_DIR "C:/msys64/mingw64")
+     ```
+   - Đảm bảo đường dẫn này khớp với nơi bạn cài đặt MSYS2
+   - Nếu bạn cài MSYS2 ở ổ đĩa khác, hãy thay đổi `C:` thành ổ đĩa tương ứng
+
+2. Kiểm tra tên file thư viện:
+   - Kiểm tra xem các file thư viện có tồn tại không:
+     ```bash
+     # Trong MSYS2 terminal
+     ls C:/msys64/mingw64/lib/libssl*
+     ls C:/msys64/mingw64/lib/libcrypto*
+     ls C:/msys64/mingw64/lib/libqrencode*
+     ```
+   - Nếu tên file khác với trong CMakeLists.txt, hãy cập nhật lại
+
+3. Kiểm tra file DLL:
+   - Kiểm tra xem các file DLL có tồn tại không:
+     ```bash
+     # Trong MSYS2 terminal
+     ls C:/msys64/mingw64/bin/libssl*
+     ls C:/msys64/mingw64/bin/libcrypto*
+     ls C:/msys64/mingw64/bin/libqrencode*
+     ```
+   - Nếu tên file DLL khác, hãy cập nhật lại trong phần copy DLL của CMakeLists.txt
+
+#### macOS
+
+1. Kiểm tra cài đặt Homebrew:
+   ```bash
+   # Kiểm tra phiên bản Homebrew
+   brew --version
+   
+   # Cập nhật Homebrew nếu cần
+   brew update
+   ```
+
+2. Kiểm tra các thư viện đã cài đặt:
+   ```bash
+   # Kiểm tra OpenSSL
+   brew list openssl
+   # Kiểm tra qrencode
+   brew list qrencode
+   ```
+
+3. Kiểm tra đường dẫn trong CMakeLists.txt:
+   - Mở file `CMakeLists.txt`
+   - Tìm và kiểm tra các biến đường dẫn:
+     ```cmake
+     set(OPENSSL_ROOT_DIR "/opt/homebrew/opt/openssl@3")
+     ```
+   - Nếu đường dẫn khác, hãy cập nhật lại cho phù hợp với vị trí cài đặt của bạn
+   - Kiểm tra đường dẫn thực tế:
+     ```bash
+     brew --prefix openssl
+     brew --prefix qrencode
+     ```
+
+4. Kiểm tra quyền truy cập:
+   ```bash
+   # Kiểm tra quyền truy cập thư mục build
+   ls -la build/
+   
+   # Nếu cần, cấp quyền truy cập
+   chmod -R 755 build/
+   ```
+
+5. Kiểm tra phiên bản CMake:
+   ```bash
+   cmake --version
+   # Đảm bảo phiên bản >= 3.10
+   ```
+
+4. Sau khi sửa, xóa thư mục build và build lại:
+   ```bash
+   rm -rf build
+   mkdir build
+   cd build
+   cmake ..
+   cmake --build .
+   ```
+
 ### Cấu trúc thư mục
 
 ```
 wallet-management/
-├── CMakeLists.txt
-├── main.cpp
-├── User.h
-├── User.cpp
-├── UserManager.h
-├── UserManager.cpp
-└── data/
-    └── users.txt
+├── CMakeLists.txt              # File cấu hình CMake
+├── README.md                   # Tài liệu hướng dẫn
+├── requirement.txt             # Danh sách các thư viện cần thiết
+├── main.cpp                    # File chính của chương trình
+├── User.h                      # Header file cho class User
+├── User.cpp                    # Implementation của class User
+├── UserManager.h              # Header file cho class UserManager
+├── UserManager.cpp            # Implementation của class UserManager
+├── OTPManager.h               # Header file cho class OTPManager
+├── OTPManager.cpp             # Implementation của class OTPManager
+├── PasswordHasher.h           # Header file cho class PasswordHasher
+├── PasswordHasher.cpp         # Implementation của class PasswordHasher
+├── QRPrinter.h                # Header file cho class QRPrinter
+├── QRPrinter.cpp              # Implementation của class QRPrinter
+├── lib/                       # Thư mục chứa các thư viện bên thứ ba
+│   └── cotp/                  # Thư viện COTP cho xác thực hai lớp
+├── data/                      # Thư mục lưu trữ dữ liệu
+│   └── users.txt              # File lưu thông tin người dùng
+└── build/                     # Thư mục chứa các file build
 ```
 
 ### Lưu ý
