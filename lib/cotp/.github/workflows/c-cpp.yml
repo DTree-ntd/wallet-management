@@ -1,0 +1,52 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  linux-build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Compiler version
+      run: gcc --version
+    - name: make tests
+      run: make tests
+    - name: Test C
+      run: ./test_c
+    - name: Test C++
+      run: ./test_cpp
+    - uses: actions/upload-artifact@v3
+      name: upload binaries
+      with:
+        name: linux-binaries
+        path: |
+          *.a
+          *.so
+  windows-build:
+    runs-on: windows-latest
+    if: false
+    steps:
+    - uses: actions/checkout@v3
+    - uses: egor-tensin/setup-mingw@v2
+      with:
+        platform: x64
+    - name: Compiler version
+      run: gcc --version
+    - name: make tests
+      run: make tests
+    - name: Test C
+      run: test_c.exe
+    - name: Test C++
+      run: test_cpp.exe
+    - uses: actions/upload-artifact@v3
+      name: upload binaries
+      with:
+        name: windows-binaries.7z
+        path: |
+          *.a
+          *.dll
+

@@ -6,11 +6,13 @@
 #include <sstream>
 #include <iomanip>
 #include "User.h"
+#include "OTPManager.h"
 
 class UserManager {
 private:
     std::map<std::string, User> users;
     std::string dataFile;
+    OTPManager otpManager;
 
     bool isUsernameExists(const std::string& username);
     void sendLoginInfoToUser(const std::string& email, const std::string& username, 
@@ -28,4 +30,8 @@ public:
                            
     bool login(const std::string& username, const std::string& password);
     std::string generateRandomPassword();
+
+    // OTP functions
+    std::string setupOTP(const std::string& username);
+    bool verifyOTP(const std::string& username, const std::string& otp);
 }; 

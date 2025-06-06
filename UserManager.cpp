@@ -132,4 +132,26 @@ bool UserManager::registerUserByAdmin(const std::string& username, const std::st
 
     sendLoginInfoToUser(email, username, autoPassword);
     return true;
+}
+
+std::string UserManager::setupOTP(const std::string& username) {
+    std::string secretKey = otpManager.generateSecretKey();
+    if (secretKey.empty()) {
+        return "";
+    }
+    
+    if (!otpManager.saveSecretKey(username, secretKey)) {
+        return "";
+    }
+    
+    return otpManager.generateQRCodeURI(username);
+}
+
+bool UserManager::verifyOTP(const std::string& username, const std::string& otp) {
+    std::string secretKey = otpManager.loadSecretKey(username);
+    if (secretKey.empty()) {
+        return false;
+    }
+    
+    return otpManager.verifyOTP(otp);
 } 
