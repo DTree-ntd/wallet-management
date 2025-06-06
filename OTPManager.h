@@ -1,43 +1,27 @@
 #pragma once
 #include <string>
-extern "C" {
-    #include "lib/cotp/cotp.h"
-}
-#include <openssl/hmac.h>
-#include <openssl/evp.h>
+#include <map>
 #include <ctime>
-
-// Forward declarations
-COTPRESULT totp_algo(const char* input, size_t input_len, char* output, size_t* output_len);
-uint64_t totp_time();
+#include <qrencode.h>
 
 class OTPManager {
 private:
     std::string secretKey;
-    OTPData* otpData;
+    std::map<std::string, std::pair<std::string, time_t>> tempOTPs; // username -> (secretKey, expiryTime)
 
 public:
     OTPManager();
     ~OTPManager();
 
-    // Tao secret key moi cho user
-    std::string generateSecretKey();
-
-    // Tao QR code URI de user co the quet ma
-    std::string generateQRCodeURI(const std::string& username);
-
-    // Xac thuc ma OTP
-    bool verifyOTP(const std::string& otp);
-
-    // Lay ma OTP hien tai
+    // Temporary OTP methods
+    std::string generateTempOTP(const std::string& username);
+    bool verifyTempOTP(const std::string& username, const std::string& otp);
+    void removeTempOTP(const std::string& username);
     std::string getCurrentOTP();
+    
+    // QR code generation
+    void printQRCode(const std::string& otp);
 
-    // Luu secret key vao file
-    bool saveSecretKey(const std::string& username, const std::string& secretKey);
-
-    // Doc secret key tu file
-    std::string loadSecretKey(const std::string& username);
-
-    // Getter cho secretKey
+    // Getter for secretKey
     const std::string& getSecretKey() const { return secretKey; }
 }; 

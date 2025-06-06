@@ -50,4 +50,11 @@ public:
     // OTP functions
     std::string setupOTP(const std::string& username);
     bool verifyOTP(const std::string& username, const std::string& otp);
+    std::string getCurrentOTP();
+    void printOTPQRCode(const std::string& otp);
+    
+    // Password change with OTP
+    std::string initiatePasswordChange(const std::string& username);
+    bool changePasswordWithOTP(const std::string& username, const std::string& oldPassword, 
+                             const std::string& newPassword, const std::string& otp);
 }; 

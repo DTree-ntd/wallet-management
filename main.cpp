@@ -1,4 +1,5 @@
 #include "UserManager.h"
+#include "QRPrinter.h"
 #include <iostream>
 #include <string>
 #include <limits>
@@ -126,10 +127,25 @@ void changePassword(UserManager& userManager) {
     std::cout << "Nhap mat khau cu: ";
     std::cin >> oldPassword;
     
+    // Generate temporary OTP
+    std::string otpCode = userManager.initiatePasswordChange(username);
+    if (otpCode.empty()) {
+        std::cout << "Khong the tao ma OTP tam thoi. Vui long thu lai sau.\n";
+        return;
+    }
+    
+    std::cout << "Quet ma QR de lay ma OTP:\n";
+    userManager.printOTPQRCode(otpCode);
+    std::cout << "\nMa OTP se het han sau 5 phut.\n";
+    
     std::cout << "Nhap mat khau moi: ";
     std::cin >> newPassword;
     
-    if (userManager.changePassword(username, oldPassword, newPassword)) {
+    std::string otp;
+    std::cout << "Nhap ma OTP: ";
+    std::cin >> otp;
+    
+    if (userManager.changePasswordWithOTP(username, oldPassword, newPassword, otp)) {
         std::cout << "Doi mat khau thanh cong!\n";
     } else {
         std::cout << "Doi mat khau that bai! Vui long kiem tra lai thong tin.\n";

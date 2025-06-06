@@ -1,141 +1,106 @@
 #include "OTPManager.h"
-extern "C" {
-    #include "cotp.h"
-    #include "otpuri.h"
-}
-#include <fstream>
 #include <random>
 #include <sstream>
 #include <iomanip>
-#include <openssl/rand.h>
-#include <cstring>
-
-// Declare C functions
-extern "C" {
-    COTPRESULT otpuri_build_uri(OTPData* data, const char* issuer, const char* name, const char* digest, char* output);
-    COTPRESULT totp_now(OTPData* data, char* out_str);
-}
-
-// Global variable for callback functions
-static OTPManager* currentOTPManager = nullptr;
-
-// Callback function for TOTP algorithm
-COTPRESULT totp_algo(const char* input, size_t input_len, char* output, size_t* output_len) {
-    if (!currentOTPManager) return -1;
-    
-    unsigned char hash[EVP_MAX_MD_SIZE];
-    unsigned int hash_len;
-    
-    const std::string& secretKey = currentOTPManager->getSecretKey();
-    HMAC(EVP_sha1(), secretKey.c_str(), secretKey.length(),
-         (unsigned char*)input, input_len, hash, &hash_len);
-    
-    memcpy(output, hash, hash_len);
-    *output_len = hash_len;
-    return 0;
-}
-
-// Callback function for time
-uint64_t totp_time() {
-    return time(NULL);
-}
+#include <iostream>
+#include <ctime>
 
 OTPManager::OTPManager() {
-    otpData = (OTPData*)malloc(sizeof(OTPData));
-    if (otpData) {
-        otpData->algo = (COTP_ALGO)totp_algo;
-        otpData->time = totp_time;
-        otpData->digits = 6;
-        otpData->interval = 30;
-    }
-    currentOTPManager = this;
 }
 
 OTPManager::~OTPManager() {
-    if (otpData) {
-        free(otpData);
-    }
-    if (currentOTPManager == this) {
-        currentOTPManager = nullptr;
-    }
 }
 
-std::string OTPManager::generateSecretKey() {
-    unsigned char randomBytes[20];
-    RAND_bytes(randomBytes, sizeof(randomBytes));
+void OTPManager::printQRCode(const std::string& otp) {
+    // Generate QR code
+    QRcode* qr = QRcode_encodeString(otp.c_str(), 0, QR_ECLEVEL_L, QR_MODE_8, 1);
+    if (!qr) {
+        std::cerr << "Error: Could not generate QR code\n";
+        return;
+    }
+
+    // Print top border
+    std::cout << "┌";
+    for (int i = 0; i < qr->width * 2; i++) {
+        std::cout << "─";
+    }
+    std::cout << "┐\n";
+
+    // Print QR code content
+    for (int y = 0; y < qr->width; y++) {
+        std::cout << "│";
+        for (int x = 0; x < qr->width; x++) {
+            // Check if the module is set (black)
+            if (qr->data[y * qr->width + x] & 1) {
+                std::cout << "██";
+            } else {
+                std::cout << "  ";
+            }
+        }
+        std::cout << "│\n";
+    }
+
+    // Print bottom border
+    std::cout << "└";
+    for (int i = 0; i < qr->width * 2; i++) {
+        std::cout << "─";
+    }
+    std::cout << "┘\n";
+
+    // Free QR code
+    QRcode_free(qr);
+}
+
+std::string OTPManager::generateTempOTP(const std::string& username) {
+    // Generate a random 6-digit OTP
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> dis(0, 999999);
+    int otp = dis(gen);
     
+    // Convert to string with leading zeros
     std::stringstream ss;
-    for(int i = 0; i < sizeof(randomBytes); i++) {
-        ss << std::hex << std::setw(2) << std::setfill('0') << (int)randomBytes[i];
-    }
+    ss << std::setw(6) << std::setfill('0') << otp;
+    std::string otpStr = ss.str();
     
-    secretKey = ss.str();
-    return secretKey;
+    // Store with 5 minutes expiry
+    time_t expiryTime = time(nullptr) + 300; // 5 minutes
+    tempOTPs[username] = std::make_pair(otpStr, expiryTime);
+    
+    return otpStr;
 }
 
-std::string OTPManager::generateQRCodeURI(const std::string& username) {
-    char uri[256];
-    OTPData otpData;
-    otpData.method = TOTP;
-    otpData.digits = 6;
-    otpData.interval = 30;
-    otpData.base32_secret = secretKey.c_str();
-
-    if (otpuri_build_uri(&otpData, username.c_str(), username.c_str(), "SHA1", uri) == OTP_OK) {
-        return std::string(uri);
-    }
-    return "";
-}
-
-bool OTPManager::verifyOTP(const std::string& otp) {
-    if (secretKey.empty()) {
+bool OTPManager::verifyTempOTP(const std::string& username, const std::string& otp) {
+    auto it = tempOTPs.find(username);
+    if (it == tempOTPs.end()) {
         return false;
     }
     
-    char currentOTP[7];
-    if (totp_now(otpData, currentOTP) == 0) {
-        return (otp == currentOTP);
+    // Check if OTP has expired
+    if (time(nullptr) > it->second.second) {
+        tempOTPs.erase(it);
+        return false;
     }
-    return false;
+    
+    // Verify OTP
+    bool result = (otp == it->second.first);
+    
+    // Remove OTP after verification
+    tempOTPs.erase(it);
+    
+    return result;
+}
+
+void OTPManager::removeTempOTP(const std::string& username) {
+    tempOTPs.erase(username);
 }
 
 std::string OTPManager::getCurrentOTP() {
-    if (secretKey.empty()) {
-        return "";
-    }
-    
-    char otp[7];
-    if (totp_now(otpData, otp) == 0) {
-        return std::string(otp);
-    }
-    return "";
-}
-
-bool OTPManager::saveSecretKey(const std::string& username, const std::string& secretKey) {
-    std::ofstream file("data/otp_keys.txt", std::ios::app);
-    if (!file.is_open()) {
-        return false;
-    }
-    
-    file << username << "|" << secretKey << "\n";
-    file.close();
-    return true;
-}
-
-std::string OTPManager::loadSecretKey(const std::string& username) {
-    std::ifstream file("data/otp_keys.txt");
-    std::string line;
-    
-    while (std::getline(file, line)) {
-        std::stringstream ss(line);
-        std::string storedUsername, storedKey;
-        std::getline(ss, storedUsername, '|');
-        std::getline(ss, storedKey, '|');
-        
-        if (storedUsername == username) {
-            return storedKey;
+    // Find the first non-expired OTP
+    for (auto it = tempOTPs.begin(); it != tempOTPs.end(); ++it) {
+        if (time(nullptr) <= it->second.second) {
+            return it->second.first;
         }
     }
-    
     return "";
 } 
