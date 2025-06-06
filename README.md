@@ -49,6 +49,7 @@ Hệ thống quản lý ví điểm thưởng là một ứng dụng cho phép n
 - C++ compiler hỗ trợ C++11 trở lên (GCC, Clang, hoặc MSVC)
 - CMake phiên bản 3.10 trở lên
 - Make hoặc Ninja (tùy chọn)
+- OpenSSL phiên bản 3.0 trở lên
 
 ### Cài đặt môi trường
 
@@ -56,20 +57,24 @@ Hệ thống quản lý ví điểm thưởng là một ứng dụng cho phép n
 
 1. Cài đặt MinGW-w64 hoặc Visual Studio với C++ development tools
 2. Cài đặt CMake từ [trang chủ CMake](https://cmake.org/download/)
-
-#### Linux
-
-```bash
-# Ubuntu/Debian
-sudo apt update
-sudo apt install build-essential cmake
-```
+3. Cài đặt MSYS2:
+   - Tải MSYS2 từ [trang chủ MSYS2](https://www.msys2.org/)
+   - Chạy installer và làm theo hướng dẫn
+   - Mở MSYS2 MINGW64 terminal và cập nhật hệ thống:
+     ```bash
+     pacman -Syu
+     ```
+   - Cài đặt OpenSSL và các công cụ phát triển:
+     ```bash
+     pacman -S mingw-w64-x86_64-openssl mingw-w64-x86_64-cmake mingw-w64-x86_64-gcc
+     ```
+   - Thêm đường dẫn MSYS2 vào biến môi trường PATH (thường là `C:\msys64\mingw64\bin`)
 
 #### macOS
 
 ```bash
 # Sử dụng Homebrew
-brew install cmake
+brew install cmake openssl
 ```
 
 ### Biên dịch và chạy
