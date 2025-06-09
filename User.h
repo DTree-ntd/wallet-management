@@ -1,11 +1,11 @@
 #ifndef USER_H
 #define USER_H
-
+#include "Wallet.h"
 #include <string>
-#include <vector>
 
 class User {
 private:
+    Wallet wallet;  // Mỗi user chỉ có một ví
     std::string username;
     std::string password;
     std::string fullName;
@@ -13,7 +13,6 @@ private:
     std::string phoneNumber;
     bool isAdmin;
     bool isPasswordAutoGenerate;
-    std::vector<std::string> walletIds;
 
 public:
     // Constructors
@@ -31,7 +30,8 @@ public:
     std::string getPhoneNumber() const;
     bool getIsAdmin() const;
     bool getIsPasswordAutoGenerate() const;
-    std::vector<std::string> getWalletIds() const;
+    Wallet& getWallet() { return wallet; }
+    const Wallet& getWallet() const { return wallet; }
 
     // Setters
     void setPassword(const std::string& newPassword);
@@ -39,7 +39,6 @@ public:
     void setEmail(const std::string& newEmail);
     void setPhoneNumber(const std::string& newPhoneNumber);
     void setIsPasswordAutoGenerate(bool value);
-    void addWalletId(const std::string& walletId);
 };
 
 #endif 

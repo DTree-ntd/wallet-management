@@ -1,9 +1,13 @@
 #include "UserManager.h"
 #include "QRPrinter.h"
 #include <iostream>
+#include "Wallet.h"
 #include <string>
 #include <limits>
 #include <iomanip>
+#include <cstdlib>
+
+using namespace std;
 
 void clearScreen() {
     #ifdef _WIN32
@@ -103,7 +107,10 @@ void showUserMenu() {
     std::cout << "1. Xem thong tin ca nhan\n";
     std::cout << "2. Cap nhat thong tin ca nhan\n";
     std::cout << "3. Doi mat khau\n";
-    std::cout << "4. Dang xuat\n";
+    std::cout << "4. Xem so du vi\n";
+    std::cout << "5. Chuyen diem\n";
+    std::cout << "6. Xem lich su giao dich\n";
+    std::cout << "7. Dang xuat\n";
 }
 
 void displayUserInfo(const User& user) {
@@ -246,7 +253,13 @@ void showAdminMenu() {
     std::cout << "4. Xem danh sach nguoi dung\n";
     std::cout << "5. Tao tai khoan moi\n";
     std::cout << "6. Dieu chinh thong tin nguoi dung\n";
-    std::cout << "7. Dang xuat\n";
+    std::cout << "7. Xem thong tin vi tong\n";
+    std::cout << "8. Them diem vao vi tong\n";
+    std::cout << "9. Chuyen diem tu vi tong\n";
+    std::cout << "10. Xem so du vi\n";
+    std::cout << "11. Chuyen diem\n";
+    std::cout << "12. Xem lich su giao dich\n";
+    std::cout << "13. Dang xuat\n";
 }
 
 void displayAllUsers(const std::vector<User>& users) {
@@ -413,6 +426,231 @@ void adjustUserInfo(UserManager& userManager) {
     }
 }
 
+void displayWalletBalance(const User& user) {
+    clearScreen();
+    std::cout << "\n=== THONG TIN SO DU VI ===\n";
+    std::cout << "Ten dang nhap: " << user.getUsername() << "\n";
+    std::cout << "So du hien tai: " << user.getWallet().getBalance() << " diem\n";
+}
+
+void transferPoints(UserManager& userManager, const std::string& fromUsername) {
+    clearScreen();
+    std::cout << "\n=== CHUYEN DIEM ===\n";
+    
+    std::string toUsername;
+    int amount;
+    
+    std::cout << "Nhap ten dang nhap nguoi nhan: ";
+    std::cin >> toUsername;
+    
+    if (toUsername == fromUsername) {
+        std::cout << "Khong the chuyen diem cho chinh minh!\n";
+        return;
+    }
+    
+    auto toUser = userManager.getUser(toUsername);
+    if (!toUser) {
+        std::cout << "Khong tim thay nguoi nhan!\n";
+        return;
+    }
+    
+    std::cout << "Nhap so diem muon chuyen: ";
+    std::cin >> amount;
+    
+    if (amount <= 0) {
+        std::cout << "So diem khong hop le!\n";
+        return;
+    }
+    
+    auto fromUser = userManager.getUser(fromUsername);
+    if (fromUser->getWallet().getBalance() < amount) {
+        std::cout << "So du khong du de thuc hien giao dich!\n";
+        return;
+    }
+    
+    // Generate OTP for transaction verification
+    std::string otpCode = userManager.setupOTP(fromUsername);
+    if (otpCode.empty()) {
+        std::cout << "Khong the tao ma OTP tam thoi. Vui long thu lai sau.\n";
+        return;
+    }
+    
+    std::cout << "\nQuet ma QR de lay ma OTP:\n";
+    userManager.printOTPQRCode(otpCode);
+    std::cout << "\nMa OTP se het han sau 5 phut.\n";
+    
+    std::string otp;
+    std::cout << "Nhap ma OTP: ";
+    std::cin >> otp;
+    
+    // Tạo mã giao dịch duy nhất
+    std::string transactionId = fromUsername + "_" + toUsername + "_" + std::to_string(std::time(nullptr));
+    
+    // Tạo giao dịch mới với trạng thái PENDING
+    Transaction transaction(
+        transactionId,
+        fromUser->getWallet().getWalletId(),
+        toUser->getWallet().getWalletId(),
+        amount,
+        std::time(nullptr),
+        "PENDING"
+    );
+    
+    // Xác thực OTP và thực hiện giao dịch
+    if (userManager.verifyOTP(fromUsername, otp)) {
+        // Cập nhật số dư
+        if (fromUser->getWallet().deductPoints(amount)) {
+            toUser->getWallet().addPoints(amount);
+            
+            // Cập nhật trạng thái giao dịch thành COMPLETED
+            transaction.status = "COMPLETED";
+            fromUser->getWallet().addTransaction(transaction);
+            toUser->getWallet().addTransaction(transaction);
+            
+            std::cout << "Chuyen diem thanh cong!\n";
+        } else {
+            std::cout << "Chuyen diem that bai! Vui long kiem tra lai thong tin.\n";
+        }
+    } else {
+        // Cập nhật trạng thái giao dịch thành FAILED
+        transaction.status = "FAILED";
+        fromUser->getWallet().addTransaction(transaction);
+        toUser->getWallet().addTransaction(transaction);
+        
+        std::cout << "Chuyen diem that bai! Ma OTP khong hop le.\n";
+    }
+}
+
+void displayTransactionHistory(const User& user) {
+    clearScreen();
+    std::cout << "\n=== LICH SU GIAO DICH ===\n";
+    
+    const auto& transactions = user.getWallet().getTransactionHistory();
+    if (transactions.empty()) {
+        std::cout << "Chua co giao dich nao.\n";
+        return;
+    }
+    
+    std::cout << std::left << std::setw(35) << "Thoi gian"
+              << std::setw(15) << "Loai"
+              << std::setw(15) << "So diem"
+              << std::setw(20) << "Vi giao dich"
+              << std::setw(15) << "Trang thai" << "\n";
+    std::cout << std::string(120, '-') << "\n";
+    
+    for (const auto& trans : transactions) {
+        std::string type = (trans.fromWalletId == user.getWallet().getWalletId()) ? "Gui" : "Nhan";
+        std::string otherWallet = (trans.fromWalletId == user.getWallet().getWalletId()) ? trans.toWalletId : trans.fromWalletId;
+        
+        // Get timestamp string and remove newline
+        std::string timestamp = std::ctime(&trans.timestamp);
+        timestamp = timestamp.substr(0, timestamp.length() - 1); // Remove newline character
+        
+        std::cout << std::left << std::setw(35) << timestamp
+                  << std::setw(15) << type
+                  << std::setw(15) << trans.points
+                  << std::setw(20) << otherWallet
+                  << std::setw(15) << trans.status << "\n";
+    }
+}
+
+void displayTotalWalletInfo(UserManager& userManager, const std::string& username) {
+    clearScreen();
+    std::cout << "\n=== THONG TIN VI TONG ===\n";
+    
+    auto user = userManager.getUser(username);
+    if (!user) {
+        std::cout << "Khong tim thay thong tin nguoi dung!\n";
+        return;
+    }
+    
+    if (userManager.viewTotalWalletInfo(*user)) {
+        std::cout << "\nNhan Enter de tiep tuc...";
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        std::cin.get();
+    } else {
+        std::cout << "Ban khong co quyen truy cap thong tin vi tong!\n";
+    }
+}
+
+void createNewPoints(UserManager& userManager, const std::string& username) {
+    clearScreen();
+    std::cout << "\n=== THEM DIEM VAO VI TONG ===\n";
+    
+    auto user = userManager.getUser(username);
+    if (!user) {
+        std::cout << "Khong tim thay thong tin nguoi dung!\n";
+        return;
+    }
+    
+    int amount;
+    std::cout << "Nhap so diem muon them: ";
+    std::cin >> amount;
+    
+    if (amount <= 0) {
+        std::cout << "So diem khong hop le!\n";
+        return;
+    }
+    
+    if (userManager.createNewPoints(amount, *user)) {
+        std::cout << "Tao diem thanh cong!\n";
+    } else {
+        std::cout << "Tao diem that bai! Vui long kiem tra lai thong tin.\n";
+    }
+}
+
+void transferPointsFromTotal(UserManager& userManager, const std::string& username) {
+    clearScreen();
+    std::cout << "\n=== CHUYEN DIEM TU VI TONG ===\n";
+    
+    auto admin = userManager.getUser(username);
+    if (!admin || !admin->getIsAdmin()) {
+        std::cout << "Ban khong co quyen thuc hien chuc nang nay!\n";
+        return;
+    }
+
+    // Hiển thị số dư ví tổng
+    std::cout << "So du vi tong: " << userManager.getTotalWalletBalance() << " diem\n\n";
+
+    // Nhập thông tin người nhận
+    std::string receiverUsername;
+    std::cout << "Nhap ten nguoi nhan: ";
+    std::cin >> receiverUsername;
+
+    auto receiver = userManager.getUser(receiverUsername);
+    if (!receiver) {
+        std::cout << "Khong tim thay nguoi dung!\n";
+        return;
+    }
+
+    // Nhập số điểm
+    int points;
+    std::cout << "Nhap so diem muon chuyen: ";
+    std::cin >> points;
+
+    if (points <= 0) {
+        std::cout << "So diem khong hop le!\n";
+        return;
+    }
+
+    if (points > userManager.getTotalWalletBalance()) {
+        std::cout << "So du vi tong khong du!\n";
+        return;
+    }
+
+    // Tạo mã giao dịch
+    std::string transactionId = "SYSTEM_TOTAL_WALLET_001_" + std::to_string(std::time(nullptr));
+
+    // Thực hiện chuyển điểm
+    if (userManager.transferPointsFromTotal(transactionId, points, *receiver)) {
+        std::cout << "Chuyen diem thanh cong!\n";
+        std::cout << "So du vi tong con lai: " << userManager.getTotalWalletBalance() << " diem\n";
+        std::cout << "So du vi nguoi nhan: " << receiver->getWallet().getBalance() << " diem\n";
+    } else {
+        std::cout << "Chuyen diem that bai!\n";
+    }
+}
+
 void login(UserManager& userManager) {
     clearScreen();
     std::string username, password;
@@ -448,7 +686,7 @@ void login(UserManager& userManager) {
         while (true) {
             if (userManager.isAdmin(username)) {
                 showAdminMenu();
-                int choice = getMenuChoice(1, 7);
+                int choice = getMenuChoice(1, 13);
                 
                 switch (choice) {
                     case 1:
@@ -470,11 +708,29 @@ void login(UserManager& userManager) {
                         adjustUserInfo(userManager);
                         break;
                     case 7:
+                        displayTotalWalletInfo(userManager, username);
+                        break;
+                    case 8:
+                        createNewPoints(userManager, username);
+                        break;
+                    case 9:
+                        transferPointsFromTotal(userManager, username);
+                        break;
+                    case 10:
+                        displayWalletBalance(*userManager.getUser(username));
+                        break;
+                    case 11:
+                        transferPoints(userManager, username);
+                        break;
+                    case 12:
+                        displayTransactionHistory(*userManager.getUser(username));
+                        break;
+                    case 13:
                         return;
                 }
             } else {
                 showUserMenu();
-                int choice = getMenuChoice(1, 4);
+                int choice = getMenuChoice(1, 7);
                 
                 switch (choice) {
                     case 1:
@@ -487,6 +743,15 @@ void login(UserManager& userManager) {
                         changePassword(userManager, username);
                         break;
                     case 4:
+                        displayWalletBalance(*userManager.getUser(username));
+                        break;
+                    case 5:
+                        transferPoints(userManager, username);
+                        break;
+                    case 6:
+                        displayTransactionHistory(*userManager.getUser(username));
+                        break;
+                    case 7:
                         return;
                 }
             }
@@ -527,6 +792,6 @@ int main() {
         clearInputBuffer();
         std::cin.get();
     }
-    
+
     return 0;
-} 
+}
