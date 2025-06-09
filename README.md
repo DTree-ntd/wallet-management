@@ -29,7 +29,7 @@ Hệ thống quản lý ví điểm thưởng là một ứng dụng cho phép n
    - Xem lịch sử giao dịch
 
 2. **Người quản lý**
-   - Quản lý thông tin cá nhân
+   - Xem và điều chỉnh thông tin cá nhân
    - Quản lý danh sách người dùng
    - Tạo tài khoản mới
    - Hỗ trợ điều chỉnh thông tin người dùng
@@ -110,6 +110,10 @@ cmake --build .
 # Linux/macOS
 ./wallet_management
 ```
+
+4. Đăng nhập vào chương trình dùng tài khoản admin mặc định:
+   - username: admin
+   - password: password
 
 ### Xử lý lỗi
 

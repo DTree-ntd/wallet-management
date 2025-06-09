@@ -26,6 +26,23 @@ UserManager::UserManager(const std::string& usersPath)
         std::ofstream createFile(dataFile);
         if (!createFile.is_open()) {
             std::cout << "Loi: Khong the tao file users.txt!\n";
+        } else {
+            // Create admin account
+            std::string adminUsername = "admin";
+            std::string adminPassword = "password"; // Default password
+            std::string adminFullName = "System Administrator";
+            std::string adminEmail = "admin@system.com";
+            std::string adminPhone = "0123456789";
+            
+            // Hash password
+            std::string hashedPassword = PasswordHasher::hashPassword(adminPassword);
+            
+            // Create admin user
+            User adminUser(adminUsername, hashedPassword, adminFullName, adminEmail, adminPhone, true, false);
+            users[adminUsername] = adminUser;
+            
+            // Save to file
+            saveUsers();
         }
         createFile.close();
     }
