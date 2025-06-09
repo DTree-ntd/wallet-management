@@ -323,4 +323,57 @@ std::string UserManager::getCurrentOTP() {
 
 void UserManager::printOTPQRCode(const std::string& otp) {
     otpManager.printQRCode(otp);
+}
+
+std::string UserManager::initiateUserInfoUpdate(const std::string& username) {
+    auto it = users.find(username);
+    if (it == users.end()) {
+        return "";
+    }
+    
+    // Generate temporary OTP
+    std::string otpCode = otpManager.generateTempOTP(username);
+    if (otpCode.empty()) {
+        return "";
+    }
+    
+    return otpCode;
+}
+
+bool UserManager::updateUserInfoWithOTP(const std::string& username,
+                                      const std::string& newFullName,
+                                      const std::string& newEmail,
+                                      const std::string& newPhoneNumber,
+                                      const std::string& otp) {
+    auto it = users.find(username);
+    if (it == users.end()) {
+        return false;
+    }
+
+    // Verify OTP
+    if (!otpManager.verifyTempOTP(username, otp)) {
+        return false;
+    }
+
+    // Validate new email if changed
+    if (newEmail != it->second.getEmail() && !isValidEmail(newEmail)) {
+        return false;
+    }
+
+    // Validate new phone number if changed
+    if (newPhoneNumber != it->second.getPhoneNumber() && !isValidPhoneNumber(newPhoneNumber)) {
+        return false;
+    }
+
+    // Update user information
+    it->second.setFullName(newFullName);
+    it->second.setEmail(newEmail);
+    it->second.setPhoneNumber(newPhoneNumber);
+
+    // Save changes
+    if (!saveUsers()) {
+        return false;
+    }
+
+    return true;
 } 

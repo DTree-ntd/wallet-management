@@ -118,6 +118,7 @@ Nếu sau khi cài đặt môi trường mà vẫn không build được, hãy k
 #### Windows
 
 1. Kiểm tra đường dẫn MSYS2:
+
    - Mở file `CMakeLists.txt`
    - Tìm và kiểm tra các biến đường dẫn:
      ```cmake
@@ -128,6 +129,7 @@ Nếu sau khi cài đặt môi trường mà vẫn không build được, hãy k
    - Nếu bạn cài MSYS2 ở ổ đĩa khác, hãy thay đổi `C:` thành ổ đĩa tương ứng
 
 2. Kiểm tra tên file thư viện:
+
    - Kiểm tra xem các file thư viện có tồn tại không:
      ```bash
      # Trong MSYS2 terminal
@@ -150,15 +152,17 @@ Nếu sau khi cài đặt môi trường mà vẫn không build được, hãy k
 #### macOS
 
 1. Kiểm tra cài đặt Homebrew:
+
    ```bash
    # Kiểm tra phiên bản Homebrew
    brew --version
-   
+
    # Cập nhật Homebrew nếu cần
    brew update
    ```
 
 2. Kiểm tra các thư viện đã cài đặt:
+
    ```bash
    # Kiểm tra OpenSSL
    brew list openssl
@@ -167,6 +171,7 @@ Nếu sau khi cài đặt môi trường mà vẫn không build được, hãy k
    ```
 
 3. Kiểm tra đường dẫn trong CMakeLists.txt:
+
    - Mở file `CMakeLists.txt`
    - Tìm và kiểm tra các biến đường dẫn:
      ```cmake
@@ -180,21 +185,23 @@ Nếu sau khi cài đặt môi trường mà vẫn không build được, hãy k
      ```
 
 4. Kiểm tra quyền truy cập:
+
    ```bash
    # Kiểm tra quyền truy cập thư mục build
    ls -la build/
-   
+
    # Nếu cần, cấp quyền truy cập
    chmod -R 755 build/
    ```
 
 5. Kiểm tra phiên bản CMake:
+
    ```bash
    cmake --version
    # Đảm bảo phiên bản >= 3.10
    ```
 
-4. Sau khi sửa, xóa thư mục build và build lại:
+6. Sau khi sửa, xóa thư mục build và build lại:
    ```bash
    rm -rf build
    mkdir build
@@ -238,4 +245,4 @@ wallet-management/
 
 1. Nguyễn Trung Đức - K24DTCN588
 2. Mai Văn Đại - K24DTCN583
-3. Nguyễn Thu Trang
+3. Nguyễn Thu Trang - K24DTCN645

@@ -57,4 +57,22 @@ public:
     std::string initiatePasswordChange(const std::string& username);
     bool changePasswordWithOTP(const std::string& username, const std::string& oldPassword, 
                              const std::string& newPassword, const std::string& otp);
+
+    // Initiate user info update and generate OTP
+    std::string initiateUserInfoUpdate(const std::string& username);
+    
+    // Update user information with OTP verification
+    bool updateUserInfoWithOTP(const std::string& username, 
+                             const std::string& newFullName,
+                             const std::string& newEmail,
+                             const std::string& newPhoneNumber,
+                             const std::string& otp);
+
+    const User* getUser(const std::string& username) const {
+        auto it = users.find(username);
+        if (it != users.end()) {
+            return &(it->second);
+        }
+        return nullptr;
+    }
 }; 

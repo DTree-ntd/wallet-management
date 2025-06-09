@@ -27,8 +27,9 @@ elseif(APPLE)
     set(OPENSSL_CRYPTO_LIBRARY "${OPENSSL_ROOT_DIR}/lib/libcrypto.dylib")
     
     # macOS qrencode paths
-    find_package(PkgConfig REQUIRED)
-    pkg_check_modules(QRENCODE REQUIRED libqrencode)
+    set(QRENCODE_ROOT_DIR "/opt/homebrew/Cellar/qrencode/4.1.1")
+    set(QRENCODE_INCLUDE_DIR "${QRENCODE_ROOT_DIR}/include")
+    set(QRENCODE_LIBRARY "${QRENCODE_ROOT_DIR}/lib/libqrencode.a")
 endif()
 
 # Find OpenSSL
@@ -38,6 +39,10 @@ find_package(OpenSSL REQUIRED)
 if(WIN32)
     if(NOT EXISTS "${QRENCODE_LIBRARY}" OR NOT EXISTS "${QRENCODE_INCLUDE_DIR}/qrencode.h")
         message(FATAL_ERROR "qrencode library not found. Please install it using MSYS2: 'pacman -S mingw-w64-x86_64-qrencode'")
+    endif()
+elseif(APPLE)
+    if(NOT EXISTS "${QRENCODE_LIBRARY}" OR NOT EXISTS "${QRENCODE_INCLUDE_DIR}/qrencode.h")
+        message(FATAL_ERROR "qrencode library not found. Please install it using Homebrew: 'brew install qrencode'")
     endif()
 endif()
 
@@ -57,10 +62,9 @@ target_include_directories(wallet_management PRIVATE
     ${QRENCODE_INCLUDE_DIR}
 )
 
-target_link_libraries(wallet_management
-    cotp
-    ${OPENSSL_SSL_LIBRARY}
-    ${OPENSSL_CRYPTO_LIBRARY}
+target_link_libraries(wallet_management PRIVATE
+    OpenSSL::SSL
+    OpenSSL::Crypto
     ${QRENCODE_LIBRARY}
 )
 
