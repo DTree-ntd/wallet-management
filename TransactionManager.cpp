@@ -1,55 +1,51 @@
 #include "TransactionManager.h"
-#include <random>
 #include <sstream>
-#include <iostream>
+#include <iomanip>
+#include <random>
+#include <chrono>
 
-bool TransactionManager::transferPoints(User& fromUser, const std::string& fromWalletId,
-                                        User& toUser, const std::string& toWalletId,
-                                        int points) {
-    Wallet* fromWallet = fromUser.findWalletById(fromWalletId);
-    Wallet* toWallet = toUser.findWalletById(toWalletId);
+bool TransactionManager::transferPoints(User& fromUser, User& toUser, int points) {
+    // Lấy ví của người gửi và người nhận
+    Wallet& fromWallet = fromUser.getWallet();
+    Wallet& toWallet = toUser.getWallet();
 
-    if (!fromWallet) {
-        std::cout << "Vi nguon khong ton tai.\n";
-        return false;
-    }
-    if (!toWallet) {
-        std::cout << "Vi dich khong ton tai.\n";
-        return false;
-    }
-    if (fromWallet->getBalance() < points) {
-        std::cout << "So du vi khong du. Khong the chuyen.\n";
+    // Kiểm tra số dư
+    if (!fromWallet.deductPoints(points)) {
         return false;
     }
 
-    // Bắt đầu giao dịch (atomic)
-    bool deducted = fromWallet->deductPoints(points);
-    if (!deducted) {
-        std::cout << "Tru diem that bai.\n";
-        return false;
-    }
+    // Thêm điểm vào ví đích
+    toWallet.addPoints(points);
 
-    toWallet->addPoints(points);
-
-    // Ghi lại giao dịch với trạng thái success
+    // Tạo giao dịch mới
     std::string transactionId = generateTransactionId();
-    std::time_t now = std::time(nullptr);
-    Transaction transaction(transactionId, fromWalletId, toWalletId, points, now, "Success");
+    Transaction transaction(
+        transactionId,
+        fromWallet.getWalletId(),
+        toWallet.getWalletId(),
+        points,
+        std::time(nullptr),
+        "COMPLETED"
+    );
 
-    fromWallet->addTransaction(transaction);
-    toWallet->addTransaction(transaction);
-
-    std::cout << "Chuyen diem thanh cong! Ma giao dich: " << transactionId << std::endl;
+    // Thêm vào lịch sử giao dịch của cả hai ví
+    fromWallet.addTransaction(transaction);
+    toWallet.addTransaction(transaction);
 
     return true;
 }
 
 std::string TransactionManager::generateTransactionId() {
+    auto now = std::chrono::system_clock::now();
+    auto now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+        now.time_since_epoch()
+    );
+    
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_int_distribution<> dis(1000, 9999);
-
+    std::uniform_int_distribution<> dis(0, 9999);
+    
     std::stringstream ss;
-    ss << std::time(nullptr) << dis(gen);
+    ss << "TXN" << now_ms.count() << std::setw(4) << std::setfill('0') << dis(gen);
     return ss.str();
 }
