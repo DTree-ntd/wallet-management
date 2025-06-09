@@ -5,10 +5,11 @@
 #include <ctime>
 #include <cstdlib>
 #include <sys/stat.h>
+#include <regex>
 
 UserManager::UserManager(const std::string& usersPath)
     : dataFile(usersPath) {
-    // Tạo thư mục data nếu chưa tồn tại
+    // Create data directory if it doesn't exist
     std::string dataDir = usersPath.substr(0, usersPath.find_last_of("/\\"));
     struct stat info;
     if (stat(dataDir.c_str(), &info) != 0) {
@@ -19,7 +20,7 @@ UserManager::UserManager(const std::string& usersPath)
         #endif
     }
     
-    // Tạo file users.txt nếu chưa tồn tại
+    // Create users.txt file if it doesn't exist
     std::ifstream checkFile(dataFile);
     if (!checkFile.good()) {
         std::ofstream createFile(dataFile);
@@ -29,56 +30,153 @@ UserManager::UserManager(const std::string& usersPath)
         createFile.close();
     }
     checkFile.close();
+
+    // Load users data from file
+    loadUsers();
+}
+
+void UserManager::loadUsers() {
+    std::ifstream file(dataFile);
+    if (!file.is_open()) {
+        std::cout << "Loi: Khong the mo file de doc!\n";
+        return;
+    }
+
+    std::string line;
+    while (std::getline(file, line)) {
+        std::stringstream ss(line);
+        std::string username, password, fullName, email, phoneNumber, isAdminStr, isAutoGenStr, walletIdsStr;
+        
+        std::getline(ss, username, '|');
+        std::getline(ss, password, '|');
+        std::getline(ss, fullName, '|');
+        std::getline(ss, email, '|');
+        std::getline(ss, phoneNumber, '|');
+        std::getline(ss, isAdminStr, '|');
+        std::getline(ss, isAutoGenStr, '|');
+        std::getline(ss, walletIdsStr);
+
+        bool isAdmin = (isAdminStr == "true");
+        bool isAutoGen = (isAutoGenStr == "true");
+
+        User user(username, password, fullName, email, phoneNumber, isAdmin, isAutoGen);
+        
+        // Parse wallet IDs
+        if (!walletIdsStr.empty()) {
+            std::stringstream walletSS(walletIdsStr);
+            std::string walletId;
+            while (std::getline(walletSS, walletId, ',')) {
+                user.addWalletId(walletId);
+            }
+        }
+
+        users[username] = user;
+    }
+    file.close();
 }
 
 bool UserManager::isUsernameExists(const std::string& username) {
-    std::ifstream file(dataFile);
-    std::string line;
-    while (std::getline(file, line)) {
-        std::stringstream ss(line);
-        std::string existingUsername;
-        std::getline(ss, existingUsername, '|');
-        if (existingUsername == username) {
-            return true;
-        }
-    }
-    return false;
+    return users.find(username) != users.end();
 }
 
-bool UserManager::registerUser(const std::string& username, const std::string& password,
-                             const std::string& fullName, const std::string& email,
-                             const std::string& phoneNumber) {
-    if (isUsernameExists(username)) {
-        return false;
-    }
-
-    // Lưu thông tin user vào file
-    std::ofstream file(dataFile, std::ios::app);
+bool UserManager::saveUsers() {
+    std::ofstream file(dataFile);
     if (!file.is_open()) {
+        std::cout << "Loi: Khong the mo file de ghi!\n";
         return false;
     }
 
-    file << username << "|" << password << "|" 
-         << fullName << "|" << email << "|" << phoneNumber << "|0|0\n";
+    for (const auto& pair : users) {
+        const User& user = pair.second;
+        file << user.getUsername() << "|"
+             << user.getPassword() << "|"
+             << user.getFullName() << "|"
+             << user.getEmail() << "|"
+             << user.getPhoneNumber() << "|"
+             << (user.getIsAdmin() ? "true" : "false") << "|"
+             << (user.getIsPasswordAutoGenerate() ? "true" : "false") << "|";
+        
+        // Save wallet IDs list
+        const auto& walletIds = user.getWalletIds();
+        for (size_t i = 0; i < walletIds.size(); ++i) {
+            file << walletIds[i];
+            if (i < walletIds.size() - 1) {
+                file << ",";
+            }
+        }
+        file << "\n";
+    }
     file.close();
-
     return true;
 }
 
-bool UserManager::login(const std::string& username, const std::string& password) {
-    std::ifstream file(dataFile);
-    std::string line;
-    while (std::getline(file, line)) {
-        std::stringstream ss(line);
-        std::string storedUsername, storedPassword;
-        std::getline(ss, storedUsername, '|');
-        std::getline(ss, storedPassword, '|');
+bool UserManager::isValidEmail(const std::string& email) {
+    // Pattern for email: example@domain.com
+    const std::regex pattern("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    return std::regex_match(email, pattern);
+}
 
-        if (storedUsername == username && storedPassword == password) {
-            return true;
-        }
+bool UserManager::isValidPhoneNumber(const std::string& phoneNumber) {
+    // Pattern for phone number: 10 digits
+    const std::regex pattern("^[0-9]{10}$");
+    return std::regex_match(phoneNumber, pattern);
+}
+
+RegisterResult UserManager::registerUser(const std::string& username, const std::string& password, 
+                                      const std::string& fullName, const std::string& email, 
+                                      const std::string& phoneNumber, bool isPasswordAutoGenerated) {
+    // Check username
+    if (username.empty()) {
+        return RegisterResult::INVALID_USERNAME;
     }
-    return false;
+    if (isUsernameExists(username)) {
+        return RegisterResult::USERNAME_EXISTS;
+    }
+
+    // Check password (if not auto-generated)
+    if (!isPasswordAutoGenerated && password.empty()) {
+        return RegisterResult::INVALID_PASSWORD;
+    }
+
+    // Validate email using regex
+    if (!isValidEmail(email)) {
+        return RegisterResult::INVALID_EMAIL;
+    }
+
+    // Validate phone number using regex
+    if (!isValidPhoneNumber(phoneNumber)) {
+        return RegisterResult::INVALID_PHONE;
+    }
+
+    // Hash the password
+    std::string hashedPassword;
+    try {
+        hashedPassword = PasswordHasher::hashPassword(password);
+    } catch (const std::exception& e) {
+        std::cerr << "Error hashing password: " << e.what() << std::endl;
+        return RegisterResult::FILE_ERROR;
+    }
+
+    // Create new user
+    User newUser(username, hashedPassword, fullName, email, phoneNumber, false, isPasswordAutoGenerated);
+    users[username] = newUser;
+
+    // Save to file
+    if (!saveUsers()) {
+        users.erase(username); // Remove user from map if file save fails
+        return RegisterResult::FILE_ERROR;
+    }
+
+    return RegisterResult::SUCCESS;
+}
+
+bool UserManager::login(const std::string& username, const std::string& password) {
+    auto it = users.find(username);
+    if (it == users.end()) {
+        return false;
+    }
+
+    return PasswordHasher::verifyPassword(password, it->second.getPassword());
 }
 
 std::string UserManager::generateRandomPassword() {
@@ -99,37 +197,279 @@ void UserManager::sendLoginInfoToUser(const std::string& email, const std::strin
     std::cout << "Mat khau: " << password << std::endl;
 }
 
-bool UserManager::registerUserByAdmin(const std::string& username, const std::string& fullName,
-                                    const std::string& email, const std::string& phoneNumber) {
-    if (username.empty() || fullName.empty() || 
-        email.empty() || phoneNumber.empty()) {
-        std::cout << "Loi: Vui long nhap day du thong tin!\n";
-        return false;
-    }
-
-    if (isUsernameExists(username)) {
-        std::cout << "Loi: Ten dang nhap da ton tai!\n";
-        return false;
-    }
-
-    std::string autoPassword = generateRandomPassword();
-
-    std::ofstream userFile(dataFile, std::ios::app);
-    if (!userFile.is_open()) {
-        std::cout << "Loi: Khong the mo file de ghi!\n";
-        return false;
+std::string UserManager::setupOTP(const std::string& username) {
+    // Generate a temporary OTP
+    std::string otpCode = otpManager.generateTempOTP(username);
+    if (otpCode.empty()) {
+        return "";
     }
     
-    userFile << username << "|"
-            << autoPassword << "|"
-            << fullName << "|"
-            << email << "|"
-            << phoneNumber << "|"
-            << "false|" // isAdmin
-            << "true|" // isPasswordAutoGenerate
-            << "\n"; // walletIds (empty for now)
-    userFile.close();
+    return otpCode;
+}
 
-    sendLoginInfoToUser(email, username, autoPassword);
+bool UserManager::verifyOTP(const std::string& username, const std::string& otp) {
+    return otpManager.verifyTempOTP(username, otp);
+}
+
+bool UserManager::isPasswordAutoGenerated(const std::string& username) {
+    auto it = users.find(username);
+    if (it != users.end()) {
+        return it->second.getIsPasswordAutoGenerate();
+    }
+    return false;
+}
+
+bool UserManager::changePassword(const std::string& username, const std::string& oldPassword, 
+                               const std::string& newPassword) {
+    auto it = users.find(username);
+    if (it == users.end()) {
+        return false;
+    }
+
+    // Verify old password
+    if (!PasswordHasher::verifyPassword(oldPassword, it->second.getPassword())) {
+        return false;
+    }
+
+    // Hash new password
+    std::string hashedNewPassword;
+    try {
+        hashedNewPassword = PasswordHasher::hashPassword(newPassword);
+    } catch (const std::exception& e) {
+        std::cerr << "Error hashing new password: " << e.what() << std::endl;
+        return false;
+    }
+
+    // Update password and set isPasswordAutoGenerate to false
+    it->second.setPassword(hashedNewPassword);
+    it->second.setIsPasswordAutoGenerate(false);
+
+    // Save changes
+    if (!saveUsers()) {
+        return false;
+    }
+
+    return true;
+}
+
+std::string UserManager::initiatePasswordChange(const std::string& username) {
+    auto it = users.find(username);
+    if (it == users.end()) {
+        return "";
+    }
+    
+    // Generate temporary OTP
+    std::string secretKey = otpManager.generateTempOTP(username);
+    if (secretKey.empty()) {
+        return "";
+    }
+    
+    // Get the current OTP code
+    std::string otpCode = otpManager.getCurrentOTP();
+    if (otpCode.empty()) {
+        otpManager.removeTempOTP(username);
+        return "";
+    }
+    
+    return otpCode;
+}
+
+bool UserManager::changePasswordWithOTP(const std::string& username, const std::string& oldPassword, 
+                                      const std::string& newPassword, const std::string& otp) {
+    auto it = users.find(username);
+    if (it == users.end()) {
+        return false;
+    }
+
+    // Verify old password
+    if (!PasswordHasher::verifyPassword(oldPassword, it->second.getPassword())) {
+        return false;
+    }
+
+    // Verify OTP
+    if (!otpManager.verifyTempOTP(username, otp)) {
+        otpManager.removeTempOTP(username);
+        return false;
+    }
+
+    // Hash new password
+    std::string hashedNewPassword;
+    try {
+        hashedNewPassword = PasswordHasher::hashPassword(newPassword);
+    } catch (const std::exception& e) {
+        std::cerr << "Error hashing new password: " << e.what() << std::endl;
+        otpManager.removeTempOTP(username);
+        return false;
+    }
+
+    // Update password
+    it->second.setPassword(hashedNewPassword);
+    it->second.setIsPasswordAutoGenerate(false);
+
+    // Save changes
+    if (!saveUsers()) {
+        otpManager.removeTempOTP(username);
+        return false;
+    }
+
+    // Remove temporary OTP after successful password change
+    otpManager.removeTempOTP(username);
+    return true;
+}
+
+std::string UserManager::getCurrentOTP() {
+    return otpManager.getCurrentOTP();
+}
+
+void UserManager::printOTPQRCode(const std::string& otp) {
+    otpManager.printQRCode(otp);
+}
+
+std::string UserManager::initiateUserInfoUpdate(const std::string& username) {
+    auto it = users.find(username);
+    if (it == users.end()) {
+        return "";
+    }
+    
+    // Generate temporary OTP
+    std::string otpCode = otpManager.generateTempOTP(username);
+    if (otpCode.empty()) {
+        return "";
+    }
+    
+    return otpCode;
+}
+
+bool UserManager::updateUserInfoWithOTP(const std::string& username,
+                                      const std::string& newFullName,
+                                      const std::string& newEmail,
+                                      const std::string& newPhoneNumber,
+                                      const std::string& otp) {
+    auto it = users.find(username);
+    if (it == users.end()) {
+        return false;
+    }
+
+    // Verify OTP
+    if (!otpManager.verifyTempOTP(username, otp)) {
+        return false;
+    }
+
+    // Validate new email if changed
+    if (newEmail != it->second.getEmail() && !isValidEmail(newEmail)) {
+        return false;
+    }
+
+    // Validate new phone number if changed
+    if (newPhoneNumber != it->second.getPhoneNumber() && !isValidPhoneNumber(newPhoneNumber)) {
+        return false;
+    }
+
+    // Update user information
+    it->second.setFullName(newFullName);
+    it->second.setEmail(newEmail);
+    it->second.setPhoneNumber(newPhoneNumber);
+
+    // Save changes
+    if (!saveUsers()) {
+        return false;
+    }
+
+    return true;
+}
+
+bool UserManager::isAdmin(const std::string& username) const {
+    auto it = users.find(username);
+    if (it != users.end()) {
+        return it->second.getIsAdmin();
+    }
+    return false;
+}
+
+std::vector<User> UserManager::getAllUsers() const {
+    std::vector<User> userList;
+    for (const auto& pair : users) {
+        userList.push_back(pair.second);
+    }
+    return userList;
+}
+
+RegisterResult UserManager::createUserByAdmin(const std::string& username, const std::string& password,
+                                           const std::string& fullName, const std::string& email,
+                                           const std::string& phoneNumber, bool isAdmin) {
+    // Check username
+    if (username.empty()) {
+        return RegisterResult::INVALID_USERNAME;
+    }
+    if (isUsernameExists(username)) {
+        return RegisterResult::USERNAME_EXISTS;
+    }
+
+    // Check password
+    if (password.empty()) {
+        return RegisterResult::INVALID_PASSWORD;
+    }
+
+    // Validate email
+    if (!isValidEmail(email)) {
+        return RegisterResult::INVALID_EMAIL;
+    }
+
+    // Validate phone number
+    if (!isValidPhoneNumber(phoneNumber)) {
+        return RegisterResult::INVALID_PHONE;
+    }
+
+    // Hash the password
+    std::string hashedPassword;
+    try {
+        hashedPassword = PasswordHasher::hashPassword(password);
+    } catch (const std::exception& e) {
+        std::cerr << "Error hashing password: " << e.what() << std::endl;
+        return RegisterResult::FILE_ERROR;
+    }
+
+    // Create new user with admin flag
+    User newUser(username, hashedPassword, fullName, email, phoneNumber, isAdmin, false);
+    users[username] = newUser;
+
+    // Save to file
+    if (!saveUsers()) {
+        users.erase(username);
+        return RegisterResult::FILE_ERROR;
+    }
+
+    return RegisterResult::SUCCESS;
+}
+
+bool UserManager::updateUserInfoByAdmin(const std::string& targetUsername,
+                                      const std::string& newFullName,
+                                      const std::string& newEmail,
+                                      const std::string& newPhoneNumber) {
+    auto it = users.find(targetUsername);
+    if (it == users.end()) {
+        return false;
+    }
+
+    // Validate new email if changed
+    if (newEmail != it->second.getEmail() && !isValidEmail(newEmail)) {
+        return false;
+    }
+
+    // Validate new phone number if changed
+    if (newPhoneNumber != it->second.getPhoneNumber() && !isValidPhoneNumber(newPhoneNumber)) {
+        return false;
+    }
+
+    // Update user information
+    it->second.setFullName(newFullName);
+    it->second.setEmail(newEmail);
+    it->second.setPhoneNumber(newPhoneNumber);
+
+    // Save changes
+    if (!saveUsers()) {
+        return false;
+    }
+
     return true;
 } 

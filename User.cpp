@@ -25,4 +25,7 @@ void User::setPassword(const std::string& newPassword) { password = newPassword;
 void User::setFullName(const std::string& newFullName) { fullName = newFullName; }
 void User::setEmail(const std::string& newEmail) { email = newEmail; }
 void User::setPhoneNumber(const std::string& newPhoneNumber) { phoneNumber = newPhoneNumber; }
-void User::addWalletId(const std::string& walletId) { walletIds.push_back(walletId); } 
+void User::addWalletId(const std::string& walletId) { walletIds.push_back(walletId); }
+void User::setIsPasswordAutoGenerate(bool value) {
+    isPasswordAutoGenerate = value;
+} 
