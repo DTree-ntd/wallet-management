@@ -47,6 +47,7 @@ public:
     void setFullName(const std::string& newFullName);
     void setEmail(const std::string& newEmail);
     void setPhoneNumber(const std::string& newPhoneNumber);
+    void setIsPasswordAutoGenerate(bool value);
     void addWalletId(const std::string& walletId);
 };
 
