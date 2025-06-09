@@ -220,28 +220,39 @@ Nếu sau khi cài đặt môi trường mà vẫn không build được, hãy k
 wallet-management/
 ├── CMakeLists.txt              # File cấu hình CMake
 ├── README.md                   # Tài liệu hướng dẫn
-├── requirement.txt             # Danh sách các thư viện cần thiết
-├── main.cpp                    # File chính của chương trình
-├── User.h                      # Header file cho class User
-├── User.cpp                    # Implementation của class User
-├── UserManager.h              # Header file cho class UserManager
-├── UserManager.cpp            # Implementation của class UserManager
-├── OTPManager.h               # Header file cho class OTPManager
-├── OTPManager.cpp             # Implementation của class OTPManager
-├── PasswordHasher.h           # Header file cho class PasswordHasher
-├── PasswordHasher.cpp         # Implementation của class PasswordHasher
-├── QRPrinter.h                # Header file cho class QRPrinter
-├── QRPrinter.cpp              # Implementation của class QRPrinter
-├── lib/                       # Thư mục chứa các thư viện bên thứ ba
-│   └── cotp/                  # Thư viện COTP cho xác thực hai lớp
-├── data/                      # Thư mục lưu trữ dữ liệu
-│   └── users.txt              # File lưu thông tin người dùng
-└── build/                     # Thư mục chứa các file build
+├── .gitignore                 # File cấu hình Git ignore
+├── main.cpp                   # File chính của chương trình
+├── User.h                     # Header file cho class User
+├── User.cpp                   # Implementation của class User
+├── UserManager.h             # Header file cho class UserManager
+├── UserManager.cpp           # Implementation của class UserManager
+├── Wallet.h                  # Header file cho class Wallet
+├── Wallet.cpp                # Implementation của class Wallet
+├── DataManager.h            # Header file cho class DataManager
+├── DataManager.cpp          # Implementation của class DataManager
+├── TransactionManager.h     # Header file cho class TransactionManager
+├── TransactionManager.cpp   # Implementation của class TransactionManager
+├── OTPManager.h            # Header file cho class OTPManager
+├── OTPManager.cpp          # Implementation của class OTPManager
+├── PasswordHasher.h        # Header file cho class PasswordHasher
+├── PasswordHasher.cpp      # Implementation của class PasswordHasher
+├── QRPrinter.h            # Header file cho class QRPrinter
+├── QRPrinter.cpp          # Implementation của class QRPrinter
+├── lib/                   # Thư mục chứa các thư viện bên thứ ba
+│   └── cotp/             # Thư viện COTP cho xác thực hai lớp
+├── data/                 # Thư mục lưu trữ dữ liệu
+│   ├── users.txt        # File lưu thông tin người dùng
+│   ├── wallets.txt      # File lưu thông tin ví
+│   └── transactions.txt # File lưu lịch sử giao dịch
+└── build/               # Thư mục chứa các file build
 ```
 
 ### Lưu ý
 
-- Dữ liệu người dùng được lưu trong thư mục `data/users.txt`
+- Dữ liệu được lưu trong thư mục `data/`:
+  - `users.txt`: Lưu thông tin người dùng
+  - `wallets.txt`: Lưu thông tin ví
+  - `transactions.txt`: Lưu lịch sử giao dịch
 - Thư mục `data` sẽ được tạo tự động khi chạy chương trình lần đầu tiên
 - Đảm bảo chương trình có quyền đọc/ghi vào thư mục `data`
 
