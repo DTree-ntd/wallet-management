@@ -3,6 +3,7 @@
 #include <iostream>
 #include <string>
 #include <limits>
+#include <iomanip>
 
 void clearScreen() {
     #ifdef _WIN32
@@ -236,6 +237,182 @@ void changePassword(UserManager& userManager, const std::string& username) {
     }
 }
 
+void showAdminMenu() {
+    clearScreen();
+    std::cout << "\n=== MENU QUAN TRI VIEN ===\n";
+    std::cout << "1. Xem thong tin ca nhan\n";
+    std::cout << "2. Cap nhat thong tin ca nhan\n";
+    std::cout << "3. Doi mat khau\n";
+    std::cout << "4. Xem danh sach nguoi dung\n";
+    std::cout << "5. Tao tai khoan moi\n";
+    std::cout << "6. Dieu chinh thong tin nguoi dung\n";
+    std::cout << "7. Dang xuat\n";
+}
+
+void displayAllUsers(const std::vector<User>& users) {
+    clearScreen();
+    std::cout << "\n=== DANH SACH NGUOI DUNG ===\n";
+    std::cout << std::left << std::setw(15) << "Ten dang nhap" 
+              << std::setw(25) << "Ho va ten"
+              << std::setw(25) << "Email"
+              << std::setw(15) << "So dien thoai" << "\n";
+    std::cout << std::string(80, '-') << "\n";
+    
+    for (const auto& user : users) {
+        std::cout << std::left << std::setw(15) << user.getUsername()
+                  << std::setw(25) << user.getFullName()
+                  << std::setw(25) << user.getEmail()
+                  << std::setw(15) << user.getPhoneNumber() << "\n";
+    }
+}
+
+void createUserByAdmin(UserManager& userManager) {
+    clearScreen();
+    std::string username, password, fullName, email, phoneNumber;
+    char isAdminChoice;
+    bool isAdmin = false;
+    
+    std::cout << "\n=== TAO TAI KHOAN MOI ===\n";
+    
+    std::cout << "Nhap ten dang nhap: ";
+    std::cin >> username;
+    
+    std::cout << "Nhap mat khau: ";
+    std::cin >> password;
+    
+    std::cout << "Nhap ho va ten: ";
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    std::getline(std::cin, fullName);
+    
+    std::cout << "Nhap email (email phai co dang example@domain.com): ";
+    std::cin >> email;
+    
+    std::cout << "Nhap so dien thoai (so dien thoai phai co 10 chu so): ";
+    std::cin >> phoneNumber;
+    
+    // Đơn giản hóa logic: chỉ cần nhập 'y' để tạo admin, các ký tự khác đều là no
+    std::cout << "Ban co muon tao tai khoan quan tri vien? (y/n): ";
+    std::cin >> isAdminChoice;
+    isAdmin = (std::tolower(isAdminChoice) == 'y');
+    
+    auto result = userManager.createUserByAdmin(username, password, fullName, email, phoneNumber, isAdmin);
+    switch (result) {
+        case RegisterResult::SUCCESS:
+            std::cout << "Tao tai khoan " << (isAdmin ? "quan tri vien" : "nguoi dung") << " thanh cong!\n";
+            break;
+        case RegisterResult::USERNAME_EXISTS:
+            std::cout << "Tao tai khoan that bai! Ten dang nhap da ton tai.\n";
+            break;
+        case RegisterResult::INVALID_USERNAME:
+            std::cout << "Tao tai khoan that bai! Ten dang nhap khong hop le.\n";
+            break;
+        case RegisterResult::INVALID_PASSWORD:
+            std::cout << "Tao tai khoan that bai! Mat khau khong hop le.\n";
+            break;
+        case RegisterResult::INVALID_EMAIL:
+            std::cout << "Tao tai khoan that bai! Email khong hop le.\n";
+            break;
+        case RegisterResult::INVALID_PHONE:
+            std::cout << "Tao tai khoan that bai! So dien thoai khong hop le.\n";
+            break;
+        case RegisterResult::FILE_ERROR:
+            std::cout << "Tao tai khoan that bai! Khong the luu thong tin.\n";
+            break;
+    }
+}
+
+void adjustUserInfo(UserManager& userManager) {
+    clearScreen();
+    std::cout << "\n=== DIEU CHINH THONG TIN NGUOI DUNG ===\n";
+    
+    std::string targetUsername;
+    std::cout << "Nhap ten dang nhap cua nguoi dung can dieu chinh: ";
+    std::cin >> targetUsername;
+    
+    auto targetUser = userManager.getUser(targetUsername);
+    if (!targetUser) {
+        std::cout << "Khong tim thay nguoi dung!\n";
+        return;
+    }
+    
+    std::string newFullName, newEmail, newPhoneNumber;
+    bool isValidInput = false;
+    
+    std::cout << "Nhap ho va ten moi (de trong neu khong muon thay doi): ";
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    std::getline(std::cin, newFullName);
+    if (newFullName.empty()) {
+        newFullName = targetUser->getFullName();
+    }
+    
+    // Validate email
+    do {
+        std::cout << "Nhap email moi (de trong neu khong muon thay doi): ";
+        std::getline(std::cin, newEmail);
+        if (newEmail.empty()) {
+            newEmail = targetUser->getEmail();
+            isValidInput = true;
+        } else {
+            if (!userManager.isValidEmail(newEmail)) {
+                std::cout << "Email khong hop le! Email phai co dang example@domain.com\n";
+            } else {
+                isValidInput = true;
+            }
+        }
+    } while (!isValidInput);
+    
+    // Validate phone number
+    isValidInput = false;
+    do {
+        std::cout << "Nhap so dien thoai moi (de trong neu khong muon thay doi): ";
+        std::getline(std::cin, newPhoneNumber);
+        if (newPhoneNumber.empty()) {
+            newPhoneNumber = targetUser->getPhoneNumber();
+            isValidInput = true;
+        } else {
+            if (!userManager.isValidPhoneNumber(newPhoneNumber)) {
+                std::cout << "So dien thoai khong hop le! So dien thoai phai co 10 chu so\n";
+            } else {
+                isValidInput = true;
+            }
+        }
+    } while (!isValidInput);
+    
+    // Generate OTP for user verification
+    std::string otpCode = userManager.initiateUserInfoUpdate(targetUsername);
+    if (otpCode.empty()) {
+        std::cout << "Khong the tao ma OTP tam thoi. Vui long thu lai sau.\n";
+        return;
+    }
+    
+    // Display changes
+    std::cout << "\nCac thay doi se duoc thuc hien:\n";
+    if (newFullName != targetUser->getFullName()) {
+        std::cout << "- Ho va ten: " << targetUser->getFullName() << " -> " << newFullName << "\n";
+    }
+    if (newEmail != targetUser->getEmail()) {
+        std::cout << "- Email: " << targetUser->getEmail() << " -> " << newEmail << "\n";
+    }
+    if (newPhoneNumber != targetUser->getPhoneNumber()) {
+        std::cout << "- So dien thoai: " << targetUser->getPhoneNumber() << " -> " << newPhoneNumber << "\n";
+    }
+    
+    std::cout << "\nQuet ma QR de lay ma OTP:\n";
+    userManager.printOTPQRCode(otpCode);
+    std::cout << "\nMa OTP se het han sau 5 phut.\n";
+    std::cout << "Vui long yeu cau nguoi dung nhap ma OTP de xac nhan thay doi.\n";
+    
+    std::string otp;
+    std::cout << "Nhap ma OTP: ";
+    std::cin >> otp;
+    
+    if (userManager.updateUserInfoWithOTP(targetUsername, newFullName, newEmail, newPhoneNumber, otp)) {
+        std::cout << "Cap nhat thong tin thanh cong!\n";
+    } else {
+        std::cout << "Cap nhat thong tin that bai! Vui long kiem tra lai thong tin.\n";
+    }
+}
+
 void login(UserManager& userManager) {
     clearScreen();
     std::string username, password;
@@ -267,23 +444,51 @@ void login(UserManager& userManager) {
             }
         }
         
-        // Show user menu
+        // Show appropriate menu based on user type
         while (true) {
-            showUserMenu();
-            int choice = getMenuChoice(1, 4);
-            
-            switch (choice) {
-                case 1:
-                    displayUserInfo(*userManager.getUser(username));
-                    break;
-                case 2:
-                    updateUserInfo(userManager, username);
-                    break;
-                case 3:
-                    changePassword(userManager, username);
-                    break;
-                case 4:
-                    return;
+            if (userManager.isAdmin(username)) {
+                showAdminMenu();
+                int choice = getMenuChoice(1, 7);
+                
+                switch (choice) {
+                    case 1:
+                        displayUserInfo(*userManager.getUser(username));
+                        break;
+                    case 2:
+                        updateUserInfo(userManager, username);
+                        break;
+                    case 3:
+                        changePassword(userManager, username);
+                        break;
+                    case 4:
+                        displayAllUsers(userManager.getAllUsers());
+                        break;
+                    case 5:
+                        createUserByAdmin(userManager);
+                        break;
+                    case 6:
+                        adjustUserInfo(userManager);
+                        break;
+                    case 7:
+                        return;
+                }
+            } else {
+                showUserMenu();
+                int choice = getMenuChoice(1, 4);
+                
+                switch (choice) {
+                    case 1:
+                        displayUserInfo(*userManager.getUser(username));
+                        break;
+                    case 2:
+                        updateUserInfo(userManager, username);
+                        break;
+                    case 3:
+                        changePassword(userManager, username);
+                        break;
+                    case 4:
+                        return;
+                }
             }
             
             std::cout << "\nNhan Enter de tiep tuc...";

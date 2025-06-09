@@ -31,11 +31,12 @@ private:
                             const std::string& password);
     bool saveUsers();
     void loadUsers();
-    bool isValidEmail(const std::string& email);
-    bool isValidPhoneNumber(const std::string& phoneNumber);
 
 public:
     UserManager(const std::string& usersPath);
+    
+    bool isValidEmail(const std::string& email);
+    bool isValidPhoneNumber(const std::string& phoneNumber);
     
     RegisterResult registerUser(const std::string& username, const std::string& password, 
                               const std::string& fullName, const std::string& email, 
@@ -67,6 +68,17 @@ public:
                              const std::string& newEmail,
                              const std::string& newPhoneNumber,
                              const std::string& otp);
+
+    // Admin functions
+    bool isAdmin(const std::string& username) const;
+    std::vector<User> getAllUsers() const;
+    RegisterResult createUserByAdmin(const std::string& username, const std::string& password,
+                                   const std::string& fullName, const std::string& email,
+                                   const std::string& phoneNumber, bool isAdmin = false);
+    bool updateUserInfoByAdmin(const std::string& targetUsername,
+                             const std::string& newFullName,
+                             const std::string& newEmail,
+                             const std::string& newPhoneNumber);
 
     const User* getUser(const std::string& username) const {
         auto it = users.find(username);

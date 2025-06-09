@@ -376,4 +376,100 @@ bool UserManager::updateUserInfoWithOTP(const std::string& username,
     }
 
     return true;
+}
+
+bool UserManager::isAdmin(const std::string& username) const {
+    auto it = users.find(username);
+    if (it != users.end()) {
+        return it->second.getIsAdmin();
+    }
+    return false;
+}
+
+std::vector<User> UserManager::getAllUsers() const {
+    std::vector<User> userList;
+    for (const auto& pair : users) {
+        userList.push_back(pair.second);
+    }
+    return userList;
+}
+
+RegisterResult UserManager::createUserByAdmin(const std::string& username, const std::string& password,
+                                           const std::string& fullName, const std::string& email,
+                                           const std::string& phoneNumber, bool isAdmin) {
+    // Check username
+    if (username.empty()) {
+        return RegisterResult::INVALID_USERNAME;
+    }
+    if (isUsernameExists(username)) {
+        return RegisterResult::USERNAME_EXISTS;
+    }
+
+    // Check password
+    if (password.empty()) {
+        return RegisterResult::INVALID_PASSWORD;
+    }
+
+    // Validate email
+    if (!isValidEmail(email)) {
+        return RegisterResult::INVALID_EMAIL;
+    }
+
+    // Validate phone number
+    if (!isValidPhoneNumber(phoneNumber)) {
+        return RegisterResult::INVALID_PHONE;
+    }
+
+    // Hash the password
+    std::string hashedPassword;
+    try {
+        hashedPassword = PasswordHasher::hashPassword(password);
+    } catch (const std::exception& e) {
+        std::cerr << "Error hashing password: " << e.what() << std::endl;
+        return RegisterResult::FILE_ERROR;
+    }
+
+    // Create new user with admin flag
+    User newUser(username, hashedPassword, fullName, email, phoneNumber, isAdmin, false);
+    users[username] = newUser;
+
+    // Save to file
+    if (!saveUsers()) {
+        users.erase(username);
+        return RegisterResult::FILE_ERROR;
+    }
+
+    return RegisterResult::SUCCESS;
+}
+
+bool UserManager::updateUserInfoByAdmin(const std::string& targetUsername,
+                                      const std::string& newFullName,
+                                      const std::string& newEmail,
+                                      const std::string& newPhoneNumber) {
+    auto it = users.find(targetUsername);
+    if (it == users.end()) {
+        return false;
+    }
+
+    // Validate new email if changed
+    if (newEmail != it->second.getEmail() && !isValidEmail(newEmail)) {
+        return false;
+    }
+
+    // Validate new phone number if changed
+    if (newPhoneNumber != it->second.getPhoneNumber() && !isValidPhoneNumber(newPhoneNumber)) {
+        return false;
+    }
+
+    // Update user information
+    it->second.setFullName(newFullName);
+    it->second.setEmail(newEmail);
+    it->second.setPhoneNumber(newPhoneNumber);
+
+    // Save changes
+    if (!saveUsers()) {
+        return false;
+    }
+
+    return true;
 } 
